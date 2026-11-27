@@ -31,7 +31,7 @@ tools/build-single.js  그림을 넣은 단일 HTML 만들기 (AI 없이 준비�
 
    | 이름 | 값 | 필수 |
    |---|---|---|
-   | `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com)에서 받은 키 | 필수 |
+   | `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com)에서 받은 키 (다른 이름이어도 값이 `AIza…`면 자동으로 찾아요) | 필수 |
    | `GEMINI_MODEL` | 예: `gemini-3.5-flash-lite` (비우면 이 값) | 선택 |
    | `ALLOWED_ORIGIN` | 배포 주소, 예: `https://todak.vercel.app` | 선택(권장) |
 

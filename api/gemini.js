@@ -2,25 +2,43 @@
 //
 // Vercel 프로젝트의 Settings → Environment Variables 에 넣어요.
 //   GEMINI_API_KEY  (필수) Google AI Studio에서 받은 키. 브라우저에는 절대 보내지 않아요.
+//                   다른 이름으로 넣었어도 값이 AIza… 로 시작하면 자동으로 찾아 써요.
 //   GEMINI_MODEL    (선택) 기본값 gemini-3.5-flash-lite
 //   ALLOWED_ORIGIN  (선택) 예: https://todak.vercel.app  — 다른 사이트에서 이 함수를 부르지 못하게 막아요.
 //
 // 사용자가 쓴 글은 Gemini에 전달만 하고 저장하거나 로그에 남기지 않아요.
 
 const MODEL_DEFAULT = 'gemini-3.5-flash-lite';
+
+// 키 찾기: 이름이 GEMINI_API_KEY 가 아니어도 찾아 써요.
+// 1) 흔히 쓰는 이름을 차례로  2) 그래도 없으면 값이 Gemini 키 모양(AIza…)인 환경 변수
+const KEY_NAMES = ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'GEMINI_KEY', 'GOOGLE_GENERATIVE_AI_API_KEY', 'GOOGLE_AI_API_KEY', 'GEMINI', 'API_KEY'];
+function findKey() {
+  for (const n of KEY_NAMES) {
+    const v = (process.env[n] || '').trim();
+    if (v) return { key: v, from: n };
+  }
+  for (const [n, raw] of Object.entries(process.env)) {
+    const v = (raw || '').trim().replace(/^["']|["']$/g, '');
+    if (/^AIza[0-9A-Za-z_-]{20,}$/.test(v)) return { key: v, from: n };
+  }
+  return { key: '', from: '' };
+}
 const MAX_PROMPT = 12000; // 한 번에 보내는 글자 수 (규칙 + 대화)
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
-  const key = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL || MODEL_DEFAULT;
+  const { key: rawKey, from: keyFrom } = findKey();
+  const key = rawKey.replace(/^["']|["']$/g, '');          // 값에 따옴표를 같이 넣었어도 괜찮게
+  const model = (process.env.GEMINI_MODEL || MODEL_DEFAULT).trim();
 
   const allowed = process.env.ALLOWED_ORIGIN;
   const origin = req.headers && req.headers.origin;
   if (allowed && origin && origin !== allowed) return res.status(403).json({ code: 'forbidden' });
 
   // 연결 확인: 키가 설정돼 있는지만 알려 줌 (키 값은 보내지 않음)
-  if (req.method === 'GET') return res.status(200).json({ ok: !!key, model: key ? model : '' });
+  // (어느 이름의 환경 변수에서 찾았는지만 알려 주고, 키 값은 절대 보내지 않아요)
+  if (req.method === 'GET') return res.status(200).json({ ok: !!key, model: key ? model : '', keyFrom: keyFrom || null });
   if (req.method !== 'POST') return res.status(405).json({ code: 'method_not_allowed' });
   if (!key) return res.status(503).json({ code: 'not_configured' });
 
