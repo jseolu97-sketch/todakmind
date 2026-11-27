@@ -8,7 +8,7 @@
 // 사용자가 쓴 글은 Gemini에 전달만 하고 저장하거나 로그에 남기지 않아요.
 
 const MODEL_DEFAULT = 'gemini-3.5-flash-lite';
-const MAX_PROMPT = 8000; // 글자 수
+const MAX_PROMPT = 12000; // 한 번에 보내는 글자 수 (규칙 + 대화)
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -26,19 +26,36 @@ module.exports = async function handler(req, res) {
 
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
-  const prompt = body && typeof body.prompt === 'string' ? body.prompt : '';
-  if (!prompt || prompt.length > MAX_PROMPT) return res.status(400).json({ code: 'bad_request' });
+  body = body || {};
+
+  // 두 가지 모양을 받아요.
+  //  1) { prompt, json }                    — 한 번 묻고 답 받기 (4컷, 피드백 등)
+  //  2) { system, messages:[{role,text}] }  — 이어지는 대화 (role: 'user' | 'model')
+  let contents = [], system = '';
+  if (Array.isArray(body.messages)) {
+    contents = body.messages.slice(-30)
+      .filter(m => m && typeof m.text === 'string' && m.text.trim())
+      .map(m => ({ role: m.role === 'model' ? 'model' : 'user', parts: [{ text: m.text }] }));
+    while (contents.length && contents[0].role !== 'user') contents.shift();   // 사용자 말로 시작
+    if (!contents.length || contents[contents.length - 1].role !== 'user') return res.status(400).json({ code: 'bad_request' });
+    system = typeof body.system === 'string' ? body.system : '';
+  } else if (typeof body.prompt === 'string' && body.prompt) {
+    contents = [{ role: 'user', parts: [{ text: body.prompt }] }];
+  } else {
+    return res.status(400).json({ code: 'bad_request' });
+  }
+  const total = system.length + contents.reduce((n, c) => n + c.parts[0].text.length, 0);
+  if (total > MAX_PROMPT) return res.status(400).json({ code: 'too_long' });
 
   try {
+    const payload = { contents, generationConfig: body.json ? { responseMimeType: 'application/json' } : {} };
+    if (system) payload.systemInstruction = { parts: [{ text: system }] };
     const r = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: body.json ? { responseMimeType: 'application/json' } : {},
-        }),
+        body: JSON.stringify(payload),
       }
     );
     if (!r.ok) {

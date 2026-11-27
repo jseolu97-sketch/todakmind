@@ -11,8 +11,12 @@ if (process.env.MOCK_GEMINI) {
   const realFetch = global.fetch;
   global.fetch = async (url, opt) => {
     if (!String(url).includes('generativelanguage.googleapis.com')) return realFetch(url, opt);
-    const body = JSON.parse(opt.body); const p = body.contents[0].parts[0].text;
-    let text = '그랬구나. 그 일 때문에 정말 속상했겠다. 여기선 천천히 말해도 돼.\n#표정:글썽';
+    const body = JSON.parse(opt.body); const p = body.contents[body.contents.length - 1].parts[0].text;
+    const turns = body.contents.length, first = body.contents[0].parts[0].text;
+    let text = turns > 1
+      ? `(가짜 Gemini · 대화 ${turns}개 받음) 아까 "${first.slice(0, 12)}…" 얘기에 이어서 "${p.slice(0, 12)}…"까지 들었어. 그때 어떤 마음이 제일 컸어?\n#표정:듣기`
+      : '그랬구나. 그 일 때문에 정말 속상했겠다. 여기선 천천히 말해도 돼.\n#표정:글썽';
+    if (body.systemInstruction) text = text.replace('(가짜 Gemini', '(가짜 Gemini · 규칙 받음');
     if (p.includes('panels')) text = JSON.stringify({ panels: ['단톡에서 나만 빼고 약속을 잡았어', '서운하고 외로웠어', '네 잘못이 아니야, 토닥토닥', '그 마음, 친구에게 말해 볼까?'] });
     else if (p.includes('"good"')) text = JSON.stringify({ good: ['"나는"으로 마음을 먼저 꺼냈어'], tip: '마지막에 고맙다는 말도 붙여 봐' });
     else if (p.includes('말 연습 역할극')) text = '…그렇게 말해 주니까 조금 알 것 같아.';

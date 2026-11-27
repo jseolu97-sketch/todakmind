@@ -164,6 +164,11 @@ input[type=range].temp::-moz-range-thumb{width:28px;height:28px;border-radius:50
 .stamp-row i.on{border:3px solid #c0392b;background:#fff;animation:pop .4s}
 .stamp-row i.on img{width:100%;height:100%;object-fit:cover;filter:sepia(.4) saturate(1.4) hue-rotate(-20deg)}
 .chatlog{display:flex;flex-direction:column;gap:10px}
+.theirs{align-self:flex-start;display:flex;align-items:flex-end;gap:8px;max-width:92%}
+.theirs img{width:36px;height:36px;flex:0 0 auto;border:2px solid var(--line);border-radius:50%;background:#fff;object-fit:cover}
+.theirs p{margin:0;background:#fff;border:3px solid var(--line);border-radius:16px 16px 16px 4px;padding:8px 12px;font-family:var(--hand);font-size:19px;line-height:1.35;word-break:keep-all;min-width:0;cursor:pointer}
+.theirs.thinking p{letter-spacing:.2em;animation:blink 1s steps(1) infinite}
+.room-divider{align-self:center;margin:2px 0;font-size:13px;opacity:.7}
 .mine{align-self:flex-end;max-width:85%;background:var(--lav);border:3px solid var(--line);border-radius:16px 16px 4px 16px;padding:8px 12px;font-size:16px;word-break:keep-all}
 
 /* 쓰레기통 */
@@ -514,7 +519,7 @@ function say(el, text, done){
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { finish(); return; }
   typers.set(el, st);
 }
-document.addEventListener('click', e => { const b = e.target.closest('.bubble'); if (b && typers.get(b)) typers.get(b).finish(); });
+document.addEventListener('click', e => { const b = e.target.closest('.bubble, .theirs p'); if (b && typers.get(b)) typers.get(b).finish(); });
 
 /* ───────── 마음 온도 HUD ───────── */
 const subHud = `<button class="btn small" data-back>← 동네로</button><div class="meter"><i class="hud-mark"></i></div><b class="hud-temp"></b>`;
@@ -586,17 +591,20 @@ function aiFail(e){
   else if (c === 'rate_limited') renderAINote('Gemini 무료 사용량이 잠깐 꽉 찼어요. 잠시 동안은 준비한 말로 답해요.');
   else if (c === 'network' || c === 'upstream') renderAINote('인터넷 연결이나 Gemini 서버 문제로 답을 못 받았어요. 준비한 말로 대신 답해요.');
 }
-async function gemini(prompt, json){
+async function callAI(payload){
   if (!AI) throw { code:'no_ai' };
   let r, d = {};
   try {
-    r = await fetch(AI_URL, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ prompt, json: !!json }) });
+    r = await fetch(AI_URL, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
   } catch { throw { code:'network' }; }
   try { d = await r.json(); } catch {}
   if (!r.ok) throw { code: d.code || (r.status === 429 ? 'rate_limited' : 'network'), status:r.status };
   if (!d.text) throw { code: d.code || 'empty' };
   return d.text;
 }
+const gemini = (prompt, json) => callAI({ prompt, json: !!json });
+// 이어지는 대화: system = 토닥이 규칙, messages = [{role:'user'|'model', text}]
+const geminiChat = (system, messages) => callAI({ system, messages });
 // 서버 함수가 있고 키가 설정돼 있는지 한 번 확인
 (async () => {
   if (location.protocol === 'file:') { aiState = 'off'; renderAINote(); return; }
@@ -619,6 +627,26 @@ const ROOM_RULE = {
   empathy:'공감의 방: 사용자가 실제로 말한 상황과 감정을 구체적으로 읽어 줘("많이 속상했겠다"처럼). 조언은 하지 마. 필요하면 짧은 질문 하나만.',
   side:'같이 편들어 주는 방: 사용자 편이 되어 같이 속상해하고 놀라 줘. 상황에 대해서만 속상해하고, 상대를 욕하거나 나쁜 사람이라고 단정하지는 마.',
 };
+// 대화가 자연스럽게 이어지도록: 방마다 다음 말을 끌어내는 방식
+const ROOM_FLOW = {
+  comfort:'질문은 하지 마. 대신 사용자가 앞에서 말한 일이나 마음을 한 번 짚어 주고, "천천히 더 말해도 돼"처럼 이어서 말할 자리를 열어 둬.',
+  empathy:'공감한 뒤, 사용자가 자기 마음을 더 들여다볼 수 있게 열린 질문 하나로 끝내. (예: "그때 어떤 마음이 제일 컸어?", "그 말을 들었을 때 어땠어?") 같은 질문을 되풀이하지 마.',
+  side:'같이 속상해한 뒤, 이야기를 더 들을 수 있게 짧은 질문을 가끔 붙여. (예: "그래서 그다음엔 어떻게 됐어?", "그 말까지 들은 거야?")',
+};
+function counselSystem(){
+  return `${persona()}
+지금 있는 곳: ${ROOMS[S.room]}. ${ROOM_RULE[S.room]}
+대화 이어 가기:
+- 지금까지 나눈 대화를 기억해. 사용자가 앞에서 말한 사람, 상황, 감정을 자연스럽게 다시 짚으면서 이어 가.
+- 앞에서 네가 한 말이나 표현을 되풀이하지 마. 매번 새롭게 반응해.
+- ${ROOM_FLOW[S.room]}
+- 사용자가 "응", "몰라", "그냥"처럼 짧게 답하면 부담 주지 말고 짧고 따뜻하게 받아 줘.
+- 사용자가 어떻게 해야 할지 직접 물으면, 먼저 마음을 알아준 뒤 작은 방법 하나만 부드럽게 제안해도 돼.${S.room === 'comfort' ? ' (위로의 방이라도 직접 물을 때만)' : ''}
+- 대화 중에 방이 바뀌었으면 앞 이야기는 이어 가되 말투와 반응은 지금 방에 맞춰.
+- 사용자가 들어올 때 마음 온도는 10도 중 ${S.tempIn}도였어.
+${FACE_TAG}`;
+}
+const REACT = { hug:'(토닥토닥)', attentive:'(끄덕끄덕)', teary:'(글썽글썽)', smile:'(방긋)' };
 const FACE_TAG = '답의 맨 마지막 줄에 네 표정 태그를 딱 하나 붙여: #표정:웃음 / #표정:듣기 / #표정:글썽 / #표정:안아주기. 사용자가 자해나 자살을 생각하거나, 누군가에게 맞거나 학대당하고 있거나, 누군가를 해치려는 것 같으면 답은 쓰지 말고 #위험 한 줄만 써.';
 const FACEMAP = { 웃음:'smile', 듣기:'attentive', 글썽:'teary', 안아주기:'hug' };
 function parseTagged(raw){
@@ -715,6 +743,12 @@ $$('.room-pick').forEach(b => b.onclick = () => {
     ? '예) 아이가 요즘 방문을 닫고 들어가서 말을 안 해요. 저녁 먹자고 불러도 대답이 없어서 속상했어요.'
     : '예) 엄마가 성적표 보고 한숨만 쉬었어. 나도 열심히 했는데 아무 말도 못 하고 방에 들어왔어.';
   face('#counsel-face', 'attentive');
+  // 대화 중에 방을 바꾸면 기록에 표시 (이야기는 그대로 이어짐)
+  if (S.chat.length && S.lastRoom && S.lastRoom !== S.room) {
+    const dv = document.createElement('p'); dv.className = 'room-divider'; dv.textContent = `— ${ROOMS[S.room]}으로 옮겼어요 —`;
+    $('#chatlog').append(dv);
+  }
+  S.lastRoom = S.room;
   const enter = {
     comfort:['hug',  P() ? '(두 팔을 활짝) 어서 오세요. 여기선 아무것도 정리 안 하셔도 돼요.' : '(두 팔을 활짝) 어서 와. 여기선 아무것도 정리 안 해도 돼.'],
     empathy:['attentive', P() ? '(고개를 갸웃) 무슨 일이 있었는지 하나씩 들어 볼게요.' : '(고개를 갸웃) 무슨 일이었는지 하나씩 들어 볼게.'],
@@ -755,31 +789,48 @@ function reply(text){
     ? `아니, 그건 정말 속상하셨겠어요! 저라도 엄청 ${e.p}을 거예요. 부모님이 얼마나 마음 쓰셨는지 몰라주니까 더 그렇죠. 오늘은 제가 부모님 편이에요.`
     : `뭐야, 그건 진짜 너무했다! 나 같아도 엄청 ${e.s}을 거야. 네 마음을 몰라준 건 네 잘못이 아니야. 오늘은 내가 완전 네 편이야.` };
 }
+// 대화 기록: 내 말은 오른쪽, 토닥이 말은 왼쪽 (손글씨 말풍선, 한 글자씩)
+function logTodak(text, typed, done){
+  const d = document.createElement('div'); d.className = 'theirs';
+  d.innerHTML = '<img alt=""><p></p>'; $('img', d).src = IMG.attentive;
+  $('#chatlog').append(d);
+  const p = $('p', d);
+  if (typed) say(p, text, done); else { p.textContent = text; done && done(); }
+  return d;
+}
+function logMine(text){
+  const me = document.createElement('div'); me.className = 'mine'; me.textContent = text;
+  $('#chatlog').append(me);
+}
+function scrollChat(){ const box = $('#counsel-text'); if (box) box.scrollIntoView({ behavior:'smooth', block:'end' }); }
+
 $('#send-counsel').onclick = async () => {
   const t = $('#counsel-text').value.trim();
   if (!t) { say('#b-counsel', P() ? '편하게 한 줄만 써 주셔도 괜찮아요.' : '한 줄만 써도 괜찮아.'); return; }
   if (guard(t)) return;
-  const me = document.createElement('div'); me.className = 'mine'; me.textContent = t;
-  $('#chatlog').append(me);
+  logMine(t);
   $('#counsel-text').value = '';
-  S.stories.push(t); S.chat.push({ who:'me', text:t });
+  S.stories.push(t); S.chat.push({ who:'me', text:t, room:S.room });
   const btn = $('#send-counsel'); btn.disabled = true;
-  face('#counsel-face','attentive'); say('#b-counsel', '음…');
-  const rule = reply(t);           // 감정·주제 읽기 + 준비한 답
+  face('#counsel-face','attentive'); say('#b-counsel', P() ? '음… 듣고 있어요.' : '음… 듣고 있어.');
+  const thinking = logTodak('…', false); thinking.classList.add('thinking');
+  scrollChat();
+  const rule = reply(t);           // 감정·주제 읽기 + 준비한 답 (AI가 안 될 때)
   let r = null;
   if (AI) {
     try {
-      const hist = S.chat.slice(-8).map(c => (c.who === 'me' ? '사용자: ' : '토닥이: ') + c.text).join('\n');
-      const p = parseTagged(await askAI(`${persona()}\n지금 방 — ${ROOM_RULE[S.room]}\n${FACE_TAG}\n\n지금까지 대화:\n${hist}\n\n토닥이의 다음 답:`));
-      if (p.danger) { btn.disabled = false; stopForSafety(); return; }
+      const messages = S.chat.slice(-16).map(c => ({ role: c.who === 'me' ? 'user' : 'model', text: c.text }));
+      const p = parseTagged(await geminiChat(counselSystem(), messages));
+      if (p.danger) { thinking.remove(); btn.disabled = false; stopForSafety(); return; }
       if (p.text) r = { text:p.text, face:p.face || rule.face };
     } catch (e) { aiFail(e); }
   }
   r = r || rule;
-  S.replies.push(r.text); S.chat.push({ who:'todak', text:r.text }); S.stats.talks++;
-  btn.disabled = false;
-  face('#counsel-face', r.face); say('#b-counsel', r.text, maybeSuggestFood);
- 
+  thinking.remove();
+  S.replies.push(r.text); S.chat.push({ who:'todak', text:r.text, room:S.room }); S.stats.talks++;
+  face('#counsel-face', r.face); say('#b-counsel', REACT[r.face] || REACT.attentive);
+  logTodak(r.text, true, () => { btn.disabled = false; maybeSuggestFood(); scrollChat(); });
+  scrollChat();
 };
 // 두 번 털어놓으면 따뜻한 음식 제안 (한 번만)
 function maybeSuggestFood(){
