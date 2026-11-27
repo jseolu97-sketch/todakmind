@@ -1,0 +1,12 @@
+# 비밀 값 (키는 Vercel 환경 변수에만)
+.env
+.env.*
+.vercel/
+
+# 원본 큰 그림과 쓰지 않는 그림, 만들어진 파일
+assets/original/
+dist/
+
+# 로컬 도구 설정
+.claude/
+node_modules/

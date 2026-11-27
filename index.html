@@ -1,0 +1,1297 @@
+<title>토닥토닥 마음 동네</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@700&family=DotGothic16&display=swap">
+<style>
+/* 레이아웃: 폰 화면 한 칸(최대 480px) 안에 레트로 게임 화면을 세로로 쌓는다 */
+:root{
+  --navy:#1b2444; --navy2:#26325c; --cream:#fbf1dc; --cream2:#f1e0bd;
+  --line:#4a2c1d; --yellow:#f6d365; --pink:#f29aa6; --mint:#a7c4b5; --lav:#c7b6dd;
+  --cold:#5aa0e6; --hot:#e8604c;
+  --ui:"Jua","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --hand:"Gaegu","Jua","Malgun Gothic",cursive;
+  --pix:"DotGothic16","Jua",monospace;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--navy);color:var(--line);font-family:var(--ui);font-size:17px;line-height:1.5}
+*{box-sizing:border-box}
+button,input,textarea{font:inherit;color:inherit}
+#bg{position:fixed;inset:0;background:var(--navy) center bottom/cover no-repeat;z-index:0}
+#rain{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+#app{position:relative;z-index:2;max-width:480px;margin:0 auto;min-height:100%;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+.screen{display:flex;flex-direction:column;gap:16px}
+.box{background:var(--cream);border:4px solid var(--line);border-radius:18px;box-shadow:0 7px 0 var(--line);padding:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--cream);border:4px solid var(--line);
+  border-radius:14px;box-shadow:0 6px 0 var(--line);padding:12px 18px;font-size:18px;cursor:pointer;transition:transform .06s,box-shadow .06s;text-align:center;word-break:keep-all}
+.btn:active,.btn.pressed{transform:translateY(4px);box-shadow:0 2px 0 var(--line)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:0 6px 0 var(--line)}
+.btn.yellow{background:var(--yellow)} .btn.pink{background:var(--pink)} .btn.mint{background:var(--mint)} .btn.lav{background:var(--lav)}
+.btn.small{font-size:15px;padding:7px 12px;border-width:3px;box-shadow:0 4px 0 var(--line);border-radius:12px}
+.btn.small:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+.btn.wide{width:100%}
+:focus-visible{outline:4px dashed var(--yellow);outline-offset:3px}
+h1,h2,h3{margin:0;font-weight:400;text-wrap:balance}
+h1{font-size:34px;color:var(--cream);text-align:center;letter-spacing:.02em;text-shadow:0 4px 0 var(--line)}
+h2{font-size:24px}
+p{margin:0}
+.muted{font-size:14px;opacity:.75}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>*{flex:1 1 0;min-width:0}
+/* 버튼 글자 배치: 모든 버튼은 글자를 가운데, 한 줄 높이 통일. 메뉴·방 카드만 왼쪽 정렬 */
+.btn{min-height:52px;line-height:1.25}
+.btn.small{min-height:38px}
+.row{align-items:stretch}
+.row>.btn{padding-inline:8px;font-size:17px;min-height:52px;border-width:4px;box-shadow:0 6px 0 var(--line);border-radius:14px}
+.row>.btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--line)}
+.col{display:flex;flex-direction:column;gap:12px}
+.btn.card,.btn.room-pick{justify-content:flex-start;text-align:left}
+textarea{width:100%;min-height:110px;resize:vertical;background:#fffaf0;border:3px solid var(--line);border-radius:12px;padding:12px;font-size:17px;line-height:1.5}
+textarea::placeholder{color:#a08a78}
+
+/* 토닥이 + 말풍선 */
+.talk{display:flex;gap:12px;align-items:flex-end}
+.portrait{flex:0 0 auto;width:112px;height:112px;border:4px solid var(--line);border-radius:18px;background:#fff;box-shadow:0 6px 0 var(--line);overflow:hidden}
+.portrait img{width:100%;height:100%;object-fit:cover;display:block}
+.portrait.big{width:min(168px,32vw);height:min(168px,32vw)}
+.bubble{position:relative;flex:1;min-width:0;background:#fff;border:4px solid var(--line);border-radius:20px 20px 20px 6px;
+  padding:12px 14px;font-family:var(--hand);font-size:21px;line-height:1.35;min-height:64px;box-shadow:0 5px 0 var(--line);cursor:pointer;word-break:keep-all}
+.bubble::before{content:"";position:absolute;left:-16px;bottom:12px;border:10px solid transparent;border-right:14px solid var(--line)}
+.bubble::after{content:"";position:absolute;left:-9px;bottom:14px;border:8px solid transparent;border-right:10px solid #fff}
+.bubble.typing::after{content:"";}
+.caret{display:inline-block;width:.5em;animation:blink .8s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* 마음 온도 */
+.thermo{display:flex;flex-direction:column;gap:6px}
+.temp-num{font-family:var(--pix);font-size:44px;line-height:1;text-align:center}
+input[type=range].temp{-webkit-appearance:none;appearance:none;width:100%;height:26px;border:4px solid var(--line);border-radius:14px;
+  background:linear-gradient(90deg,#5aa0e6,#9bc6ea 35%,#f6d365 55%,#f08a5d 75%,#e8604c);box-shadow:0 5px 0 var(--line);cursor:pointer}
+input[type=range].temp::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;border-radius:50%;background:var(--cream);border:4px solid var(--line)}
+input[type=range].temp::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:var(--cream);border:4px solid var(--line)}
+.scale{display:flex;justify-content:space-between;font-size:14px}
+.meter{position:relative;height:18px;border:3px solid var(--line);border-radius:10px;background:linear-gradient(90deg,#5aa0e6,#9bc6ea 35%,#f6d365 55%,#f08a5d 75%,#e8604c)}
+.meter i{position:absolute;top:-6px;width:14px;height:24px;margin-left:-7px;background:var(--cream);border:3px solid var(--line);border-radius:6px;transition:left .5s}
+
+/* 상단 HUD */
+.hud{display:flex;align-items:center;gap:10px;background:var(--cream);border:4px solid var(--line);border-radius:16px;box-shadow:0 6px 0 var(--line);padding:8px 12px}
+.hud .meter{flex:1}
+.hud b{font-family:var(--pix);font-weight:400;font-size:18px;white-space:nowrap}
+.stars{font-family:var(--pix);white-space:nowrap}
+.star{color:#e0a100}
+
+/* 동네 메뉴 */
+.menu{display:flex;flex-direction:column;gap:14px}
+.card{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:12px}
+.card img{width:72px;min-width:72px;height:72px;border:3px solid var(--line);border-radius:14px;flex:0 0 auto;object-fit:cover;background:var(--cream)}
+.card .t{display:flex;flex-direction:column;min-width:0}
+.card strong{font-weight:400;font-size:21px}
+.card small{font-size:14px;opacity:.8;line-height:1.35}
+.town-title{padding-top:28px}
+.sky-gap{height:18vh;max-height:180px}
+
+/* 방 선택 */
+.rooms{display:grid;gap:12px}
+.room-pick{text-align:left;display:flex;align-items:center;gap:12px;padding:10px 12px;justify-content:flex-start}
+.room-pick img{width:68px;height:68px;flex:0 0 auto;border:3px solid var(--line);border-radius:14px;background:#fff;object-fit:cover}
+.room-pick .rt{display:flex;flex-direction:column;min-width:0}
+.room-pick strong{display:block;font-weight:400;font-size:19px}
+.room-pick .rt span{font-size:14px;opacity:.8;line-height:1.35}
+.r-comfort{background:#f4dcc0} .r-empathy{background:#cfe3da} .r-side{background:#f4b9ab}
+.room-pick[aria-pressed=true]{outline:4px solid var(--yellow);outline-offset:2px}
+
+/* 감정 효과 (토닥이 주변) */
+.portrait{position:relative;overflow:visible}
+.portrait>img{border-radius:14px}
+.fx{position:absolute;inset:-14px;pointer-events:none;z-index:2}
+.fx svg{position:absolute;width:22%;height:auto;animation:fxUp 1.8s ease-out 3 both}
+.fx svg:nth-child(2){animation-delay:.35s} .fx svg:nth-child(3){animation-delay:.7s}
+@keyframes fxUp{0%{opacity:0;transform:translateY(8px) scale(.6)}25%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-18px) scale(1)}}
+.fx.tears svg{animation-name:fxDrop}
+@keyframes fxDrop{0%{opacity:0;transform:translateY(-6px)}25%{opacity:1}100%{opacity:0;transform:translateY(16px)}}
+.fx.steam svg{animation-name:fxSteam}
+@keyframes fxSteam{0%{opacity:0;transform:translateY(6px)}30%{opacity:1}100%{opacity:0;transform:translateY(-14px) scaleY(1.2)}}
+
+/* 토스트 · 등장 연출 · 저장 */
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;z-index:40;
+  background:var(--line);color:var(--cream);border-radius:999px;padding:8px 18px;font-size:16px;transition:opacity .25s,transform .25s;pointer-events:none;max-width:90vw;text-align:center;word-break:keep-all}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#pop{position:fixed;inset:0;z-index:30;background:rgba(20,26,50,.72);display:flex;align-items:center;justify-content:center;cursor:pointer;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.pop-inner{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:360px;width:100%}
+.pop-face{width:min(230px,60vw);height:min(230px,60vw);animation:popIn .55s cubic-bezier(.3,1.6,.5,1)}
+.pop-cap{background:var(--cream);border:4px solid var(--line);border-radius:18px;box-shadow:0 6px 0 var(--line);padding:12px 16px;font-family:var(--hand);font-size:23px;line-height:1.35;text-align:center;word-break:keep-all;animation:popIn .55s .12s cubic-bezier(.3,1.6,.5,1) both}
+.pop-hint{color:var(--cream);font-size:14px;opacity:.8}
+@keyframes popIn{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+#saveview{position:fixed;inset:0;z-index:45;background:rgba(20,26,50,.85);display:flex;align-items:center;justify-content:center;overflow:auto;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+
+/* 효과음 글자 */
+.sfx{position:absolute;font-family:var(--hand);font-size:34px;color:#e0603f;-webkit-text-stroke:1.5px var(--line);pointer-events:none;opacity:0;z-index:3;white-space:nowrap}
+.sfx.go{animation:sfx .8s ease-out}
+@keyframes sfx{0%{opacity:0;transform:scale(.4) rotate(-12deg)}30%{opacity:1;transform:scale(1.15) rotate(-6deg)}100%{opacity:0;transform:scale(1) translateY(-16px) rotate(-6deg)}}
+
+/* 쓰레기통 */
+.can-stage{position:relative;display:flex;justify-content:center;align-items:flex-end;height:170px}
+.can-stage img{height:160px;width:auto;mix-blend-mode:multiply;transform-origin:50% 100%}
+.can-stage img.wobble{animation:wobble .5s}
+@keyframes wobble{25%{transform:rotate(-5deg)}60%{transform:rotate(4deg)}}
+.can-stage .sfx{top:10px;left:58%}
+.can-count{position:absolute;right:0;bottom:4px;font-size:13px;background:var(--cream);border:2px solid var(--line);border-radius:999px;padding:1px 10px}
+#s-trash .box{background:#fffaf0}
+
+/* 식당: 김, 한 입, 도장 */
+.dish-wrap{position:relative;display:flex;justify-content:center;padding-top:30px}
+.steam{position:absolute;top:0;left:50%;transform:translateX(-50%);display:flex;gap:22px;height:44px}
+.steam i{display:block;width:12px;height:40px;border-left:4px solid rgba(74,44,29,.45);border-radius:50%;animation:steam 2.2s ease-in-out infinite}
+.steam i:nth-child(2){animation-delay:.5s} .steam i:nth-child(3){animation-delay:1s}
+@keyframes steam{0%{opacity:0;transform:translateY(12px) scaleX(1)}40%{opacity:1}100%{opacity:0;transform:translateY(-10px) scaleX(-1)}}
+.steam.off{display:none}
+.bite-mark{position:absolute;border-radius:50%;background:#fff;transform:translate(-50%,-50%) scale(0);animation:biteIn .25s forwards;z-index:2}
+@keyframes biteIn{to{transform:translate(-50%,-50%) scale(1)}}
+.crumbs{position:absolute;inset:0;display:none}
+.dish.eaten .crumbs{display:block}
+.crumbs i{position:absolute;width:9px;height:9px;border-radius:50%;background:#c9a37a}
+.crumbs i:nth-child(1){left:40%;top:52%} .crumbs i:nth-child(2){left:58%;top:45%} .crumbs i:nth-child(3){left:52%;top:62%}
+.dish-wrap .sfx{top:40%;left:58%}
+.stamps{display:flex;flex-direction:column;gap:8px}
+.stamps-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.stamp-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.stamp-row i{aspect-ratio:1;border:3px dashed #b9a48c;border-radius:50%;display:block;overflow:hidden;max-width:100%}
+.stamp-row i.on{border:3px solid #c0392b;background:#fff;animation:pop .4s}
+.stamp-row i.on img{width:100%;height:100%;object-fit:cover;filter:sepia(.4) saturate(1.4) hue-rotate(-20deg)}
+.chatlog{display:flex;flex-direction:column;gap:10px}
+.mine{align-self:flex-end;max-width:85%;background:var(--lav);border:3px solid var(--line);border-radius:16px 16px 4px 16px;padding:8px 12px;font-size:16px;word-break:keep-all}
+
+/* 쓰레기통 */
+.paper{position:relative;transition:transform .9s cubic-bezier(.5,-.3,.7,1),opacity .9s,border-radius .6s,filter .6s}
+.paper.crumple{transform:translate(var(--dx,0),var(--dy,0)) scale(.08) rotate(540deg);border-radius:50%;opacity:0;filter:brightness(.9)}
+.paper.fly{transform:translate(140%,-120vh) rotate(25deg) scale(.4);opacity:0}
+.tear-wrap{display:flex;gap:0}
+.tear-half{flex:1;min-width:0;background:#fffaf0;border:3px solid var(--line);padding:12px;font-size:16px;min-height:110px;overflow:hidden;white-space:pre-wrap;word-break:break-all;transition:transform 1s ease-in,opacity 1s}
+.tear-half.l{clip-path:polygon(0 0,100% 0,88% 12%,100% 26%,86% 40%,100% 55%,88% 70%,100% 84%,90% 100%,0 100%);border-radius:12px 0 0 12px}
+.tear-half.r{clip-path:polygon(0 0,100% 0,100% 100%,0 100%,10% 84%,0 70%,12% 55%,0 40%,14% 26%,0 12%);border-radius:0 12px 12px 0;margin-left:-8px}
+.tear-wrap.go .l{transform:translate(calc(var(--dx,0px) + 20%),var(--dy,60vh)) rotate(-35deg) scale(.15);opacity:0}
+.tear-wrap.go .r{transform:translate(calc(var(--dx,0px) - 20%),var(--dy,60vh)) rotate(35deg) scale(.15);opacity:0}
+
+/* 4컷 */
+.comic{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.panel{position:relative;background:#fff;border:4px solid var(--line);border-radius:8px;aspect-ratio:3/4;overflow:hidden;display:flex;flex-direction:column;max-width:100%}
+.panel .n{position:absolute;top:6px;left:6px;font-family:var(--pix);font-size:13px;background:var(--yellow);border:2px solid var(--line);border-radius:6px;padding:0 6px;z-index:1}
+.panel .say{margin:26px 8px 0;background:var(--cream);border:3px solid var(--line);border-radius:14px;padding:6px 8px;font-family:var(--hand);font-size:16px;line-height:1.25;word-break:keep-all;max-height:52%;overflow:hidden}
+.panel img{margin-top:auto;width:72%;align-self:center;border-top-left-radius:40%;border-top-right-radius:40%}
+.feedback li{margin-bottom:4px}
+
+/* 회전식당 */
+.belt{position:relative;overflow:hidden;height:150px;background:#b9a48c;border:4px solid var(--line);border-radius:18px;box-shadow:0 6px 0 var(--line)}
+.belt::before{content:"";position:absolute;inset:auto 0 18px;height:6px;background:repeating-linear-gradient(90deg,var(--line) 0 18px,transparent 18px 36px);opacity:.4}
+.belt-track{position:absolute;top:12px;left:0;display:flex;gap:18px;animation:belt 18s linear infinite;width:max-content}
+.belt:hover .belt-track{animation-play-state:paused}
+@keyframes belt{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.plate{width:118px;height:118px;border-radius:50%;background:#fff;border:4px solid var(--line);padding:6px;cursor:pointer;box-shadow:0 5px 0 var(--line)}
+.plate img{width:100%;height:100%;object-fit:contain;border-radius:50%}
+.dish{position:relative;width:220px;max-width:100%;aspect-ratio:1;margin:0 auto;border-radius:50%;background:#fff;border:4px solid var(--line);overflow:hidden}
+.dish img{width:100%;height:100%;object-fit:cover;transition:transform .5s,opacity .5s}
+.dish.eaten img{transform:scale(.2) rotate(30deg);opacity:0}
+.topping-tag{position:absolute;font-family:var(--hand);font-size:15px;background:var(--yellow);border:2px solid var(--line);border-radius:10px;padding:0 6px;white-space:nowrap}
+.chips{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.chip{justify-content:flex-start;gap:6px;padding:6px 10px;min-height:44px}
+.chip img{width:30px;height:30px;object-fit:contain;flex:0 0 auto}
+.chip span{min-width:0;text-align:left;font-size:14px;line-height:1.2}
+.dish .topping-img{position:absolute;height:auto;transform:rotate(var(--r,0deg));transform-origin:50% 70%}
+.dish .topping-img.drop{animation:topDrop .5s cubic-bezier(.3,1.5,.6,1) both}
+/* 마라탕 토핑은 아래쪽이 국물에 살짝 잠긴 것처럼 */
+.dish .topping-img.in-soup{-webkit-mask-image:linear-gradient(to bottom,#000 70%,rgba(0,0,0,.25) 100%);mask-image:linear-gradient(to bottom,#000 70%,rgba(0,0,0,.25) 100%)}
+@keyframes topDrop{0%{opacity:0;transform:translateY(-70%) rotate(var(--r,0deg)) scale(1.08)}65%{opacity:1;transform:translateY(5%) rotate(var(--r,0deg)) scale(1.04,.92)}100%{opacity:1;transform:rotate(var(--r,0deg))}}
+.chip[aria-pressed=true]{background:var(--yellow)}
+.bite{animation:bite .25s 3}
+@keyframes bite{50%{transform:scale(.93)}}
+
+.prop{position:absolute;width:24%;mix-blend-mode:multiply;transition:transform .4s}
+.prop.pop{animation:pop .5s}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+/* 마무리 */
+.compare{display:grid;gap:10px}
+.cmp-row{display:grid;grid-template-columns:5.5em 1fr 3em;align-items:center;gap:8px}
+.cmp-bar{height:22px;border:3px solid var(--line);border-radius:10px;background:#fffaf0;overflow:hidden}
+.cmp-bar i{display:block;height:100%;transition:width 1s}
+.cmp-row b{font-family:var(--pix);font-weight:400;font-size:20px;text-align:right}
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stat-grid div{background:#fffaf0;border:3px solid var(--line);border-radius:12px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:15px}
+.stat-grid b{font-family:var(--pix);font-weight:400;font-size:20px}
+.suggest{background:var(--yellow);border:3px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.thinking{opacity:.7}
+.comfort{text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;background:#fff;padding:22px 18px}
+.comfort .line{font-family:var(--hand);font-size:26px;line-height:1.3;word-break:keep-all}
+.comfort .share{word-break:keep-all;background:var(--yellow);border:3px solid var(--line);border-radius:12px;padding:8px 12px;font-size:17px}
+
+/* 안전 */
+.notice{background:var(--yellow);border:4px solid var(--line);border-radius:14px;padding:12px 14px;font-size:16px;box-shadow:0 5px 0 var(--line)}
+#danger{position:fixed;inset:0;z-index:50;background:rgba(15,20,40,.94);display:flex;align-items:center;justify-content:center;overflow:auto;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+#danger .box{max-width:440px;width:100%;display:flex;flex-direction:column;gap:14px;text-align:center}
+.hotline{display:flex;flex-direction:column;align-items:center;background:#fff;border:4px solid var(--line);border-radius:16px;padding:12px}
+.hotline .num{font-family:var(--ui);font-size:72px;line-height:1.05;color:#c0392b;user-select:all}
+.hotline a{color:inherit;text-decoration:none}
+
+@media (prefers-reduced-motion:reduce){
+  .belt-track{animation:none}
+  *{transition-duration:.01s!important;animation-duration:.01s!important}
+}
+</style>
+
+<div id="bg" aria-hidden="true"></div>
+<canvas id="rain" aria-hidden="true"></canvas>
+
+<main id="app">
+
+  <!-- 시작 -->
+  <section class="screen" id="s-intro">
+    <h1 style="padding-top:18px">토닥토닥<br>마음 동네</h1>
+    <div class="talk">
+      <div class="portrait"><img data-img="smile" alt="활짝 웃는 토닥이"></div>
+      <div class="bubble" id="b-intro"></div>
+    </div>
+    <div class="notice" role="note">
+      <strong>이름·학교·전화번호는 쓰지 말아 주세요.</strong><br>
+      여기에 쓴 내용은 어디에도 저장되지 않아요. 창을 닫거나 동네를 나가면 모두 사라져요.
+      <span id="ai-note" hidden style="display:block;margin-top:6px;font-size:14px"></span>
+    </div>
+    <div class="box" style="display:flex;flex-direction:column;gap:12px">
+      <h2>누가 왔어?</h2>
+      <div class="row">
+        <button class="btn pink" id="pick-parent">엄마·아빠예요</button>
+        <button class="btn mint" id="pick-student">학생이에요</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 들어올 때 마음 온도 -->
+  <section class="screen" id="s-tempin" hidden>
+    <div class="talk">
+      <div class="portrait"><img data-img="attentive" alt="귀 기울이는 토닥이"></div>
+      <div class="bubble" id="b-tempin"></div>
+    </div>
+    <div class="box thermo">
+      <label for="temp-in" class="muted">마음 온도 (0~10도)</label>
+      <div class="temp-num"><span id="temp-in-val">5</span>도</div>
+      <input type="range" class="temp" id="temp-in" min="0" max="10" step="1" value="5">
+      <div class="scale"><span>잔잔해</span><span>미지근해</span><span>부글부글</span></div>
+    </div>
+    <button class="btn yellow wide" id="go-town">동네로 들어가기</button>
+  </section>
+
+  <!-- 동네 -->
+  <section class="screen" id="s-town" hidden>
+    <h1 class="town-title">마음 동네</h1>
+    <div class="talk">
+      <div class="portrait"><img data-img="smile" alt="토닥이"></div>
+      <div class="bubble" id="b-town"></div>
+    </div>
+    <div class="hud" aria-label="마음 온도와 별">
+      <span>온도</span><div class="meter"><i class="hud-mark"></i></div><b class="hud-temp">5도</b>
+    </div>
+    <div class="menu">
+      <button class="btn card" data-go="counsel"><img data-img="iconTalk" alt=""><span class="t"><strong>얘기 좀 들어줘</strong><small>상담소. 방을 골라 고민을 털어놓아요.</small></span></button>
+      <button class="btn card" data-go="trash"><img data-img="iconTrash" alt=""><span class="t"><strong>마음 쓰레기통</strong><small>다 쓰고 구기고, 날리고, 찢어 버려요. 저장 안 돼요.</small></span></button>
+      <button class="btn card" data-go="comic"><img data-img="iconShop" alt=""><span class="t"><strong>오늘을 4컷으로</strong><small>털어놓은 이야기를 만화로 정리하고, 하고 싶던 말을 연습해요.</small></span></button>
+      <button class="btn card" data-go="food"><img data-img="iconBowl" alt=""><span class="t"><strong>회전식당</strong><small>따뜻한 음식 한 그릇이면 마음 온도가 1도 내려가요.</small></span></button>
+    </div>
+    <button class="btn lav wide" id="go-exit">동네 나가기</button>
+  </section>
+
+  <!-- 상담소 -->
+  <section class="screen" id="s-counsel" hidden>
+    <div class="hud sub"></div>
+    <div class="talk">
+      <div class="portrait big"><img id="counsel-face" data-img="attentive" alt="토닥이"></div>
+      <div class="bubble" id="b-counsel"></div>
+    </div>
+    <div class="box rooms" id="room-list">
+      <button class="btn room-pick r-comfort" data-room="comfort" aria-pressed="false"><img data-img="hug" alt=""><span class="rt"><strong>위로의 방</strong><span>답은 없어요. 그저 토닥여 줘요.</span></span></button>
+      <button class="btn room-pick r-empathy" data-room="empathy" aria-pressed="false"><img data-img="attentive" alt=""><span class="rt"><strong>공감의 방</strong><span>"많이 속상했겠다" 마음을 읽어 줘요.</span></span></button>
+      <button class="btn room-pick r-side" data-room="side" aria-pressed="false"><img data-img="teary" alt=""><span class="rt"><strong>같이 편들어 주는 방</strong><span>내 편이 되어 같이 속상해해 줘요.</span></span></button>
+    </div>
+    <div class="box" id="counsel-chat" hidden style="display:flex;flex-direction:column;gap:12px">
+      <div class="chatlog" id="chatlog"></div>
+      <label for="counsel-text" class="muted" id="counsel-room-name"></label>
+      <textarea id="counsel-text" maxlength="600"></textarea>
+      <div class="row">
+        <button class="btn" id="change-room">방 바꾸기</button>
+        <button class="btn yellow" id="send-counsel">털어놓기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 쓰레기통 -->
+  <section class="screen" id="s-trash" hidden>
+    <div class="hud sub"></div>
+    <div class="talk">
+      <div class="portrait"><img id="trash-face" data-img="earmuff" alt="귀마개를 낀 토닥이"></div>
+      <div class="bubble" id="b-trash"></div>
+    </div>
+    <div class="box" style="display:flex;flex-direction:column;gap:12px">
+      <div id="paper-stage" style="min-height:120px">
+        <div class="paper" id="paper"><textarea id="trash-text" maxlength="1500" aria-label="하고 싶은 말"></textarea></div>
+      </div>
+      <div class="can-stage"><img id="can" data-img="canClosed" alt="쓰레기통"><span class="sfx" id="can-sfx" aria-hidden="true"></span><span class="can-count" id="can-count">버린 마음 0장</span></div>
+      <div class="row">
+        <button class="btn pink" data-dump="crumple">구기기</button>
+        <button class="btn mint" data-dump="fly">날리기</button>
+        <button class="btn lav" data-dump="tear">찢기</button>
+      </div>
+      <p class="muted">이 글은 저장되지 않고, 누르는 순간 화면에서도 지워져요.</p>
+    </div>
+  </section>
+
+  <!-- 4컷 + 말 연습 -->
+  <section class="screen" id="s-comic" hidden>
+    <div class="hud sub"></div>
+    <div class="talk">
+      <div class="portrait"><img id="comic-face" data-img="smile" alt="토닥이"></div>
+      <div class="bubble" id="b-comic"></div>
+    </div>
+    <div class="box" id="comic-need" hidden style="display:flex;flex-direction:column;gap:10px">
+      <label for="comic-text">오늘 어떤 일이 있었어?</label>
+      <textarea id="comic-text" maxlength="400"></textarea>
+      <button class="btn yellow" id="make-comic">4컷으로 만들기</button>
+    </div>
+    <div class="box" id="comic-box" hidden style="display:flex;flex-direction:column;gap:12px">
+      <div class="comic" id="comic"></div>
+      <div class="col">
+        <button class="btn mint" id="save-comic">4컷 이미지로 저장</button>
+        <button class="btn yellow" id="start-practice">하고 싶었던 말 연습하기</button>
+      </div>
+    </div>
+    <div class="box" id="practice" hidden style="display:flex;flex-direction:column;gap:12px">
+      <h2 id="practice-title"></h2>
+      <p class="muted" id="practice-help"></p>
+      <div class="chatlog" id="practice-log"></div>
+      <div id="practice-input" style="display:flex;flex-direction:column;gap:10px">
+        <label for="practice-text" class="muted" id="practice-turn"></label>
+        <textarea id="practice-text" maxlength="300"></textarea>
+        <button class="btn yellow" id="send-practice">말하기</button>
+      </div>
+      <div id="practice-feedback" hidden class="notice" style="background:var(--cream)"></div>
+    </div>
+  </section>
+
+  <!-- 회전식당 -->
+  <section class="screen" id="s-food" hidden>
+    <div class="hud sub"></div>
+    <div class="talk">
+      <div class="portrait"><img id="food-face" data-img="chef" alt="요리사 모자를 쓴 토닥이"></div>
+      <div class="bubble" id="b-food"></div>
+    </div>
+    <div class="belt" aria-label="회전 레일"><div class="belt-track" id="belt"></div></div>
+    <div class="box" id="food-pick" hidden style="display:flex;flex-direction:column;gap:12px;align-items:stretch">
+      <h2 id="food-name" style="text-align:center"></h2>
+      <div class="dish-wrap">
+        <div class="steam" id="steam" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="dish" id="dish"><img id="dish-img" alt=""><div class="crumbs" aria-hidden="true"><i></i><i></i><i></i></div></div>
+        <span class="sfx" id="eat-sfx" aria-hidden="true"></span>
+      </div>
+      <p class="muted" style="text-align:center" id="eat-help">토핑을 얹어 봐</p>
+      <div class="chips" id="toppings"></div>
+      <button class="btn yellow" id="eat">이대로 먹기</button>
+    </div>
+    <div class="box stamps">
+      <div class="stamps-head"><strong>도장 카드</strong><span class="muted">다 먹을 때마다 도장 하나</span></div>
+      <div class="stamp-row" id="stamps"></div>
+    </div>
+  </section>
+
+  <!-- 마무리 -->
+  <section class="screen" id="s-exit" hidden>
+    <div class="talk">
+      <div class="portrait"><img id="exit-face" data-img="attentive" alt="토닥이"></div>
+      <div class="bubble" id="b-exit"></div>
+    </div>
+    <div class="box thermo" id="exit-measure">
+      <label for="temp-out" class="muted">지금 마음 온도 (0~10도)</label>
+      <div class="temp-num"><span id="temp-out-val">5</span>도</div>
+      <input type="range" class="temp" id="temp-out" min="0" max="10" step="1" value="5">
+      <div class="scale"><span>잔잔해</span><span>미지근해</span><span>부글부글</span></div>
+      <button class="btn yellow" id="show-compare" style="margin-top:10px">비교해 보기</button>
+    </div>
+    <div class="box compare" id="compare" hidden>
+      <h2>오늘의 마음 온도</h2>
+      <div class="cmp-row"><span>들어올 때</span><div class="cmp-bar"><i id="bar-in"></i></div><b id="num-in"></b></div>
+      <div class="cmp-row"><span>나갈 때</span><div class="cmp-bar"><i id="bar-out"></i></div><b id="num-out"></b></div>
+      <div class="stat-grid" id="stats"></div>
+      <p id="cmp-msg"></p>
+      <button class="btn yellow" id="show-card">오늘의 위로 카드 받기</button>
+    </div>
+    <div class="box comfort" id="card" hidden>
+      <span class="muted">오늘의 위로 카드</span>
+      <div class="portrait big"><img data-img="hug" alt="두 팔 벌려 안아 주는 토닥이"></div>
+      <p class="line" id="card-line"></p>
+      <p class="share">오늘 이야기를 가까운 사람에게도 나눠 봐</p>
+      <button class="btn mint" id="save-card">이미지로 저장</button>
+      <button class="btn small" id="restart">처음으로 (모든 내용 지우기)</button>
+    </div>
+  </section>
+</main>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="pop" hidden>
+  <div class="pop-inner">
+    <div class="portrait pop-face"><img id="pop-img" alt=""></div>
+    <p class="pop-cap" id="pop-cap"></p>
+    <span class="pop-hint">눌러서 넘기기</span>
+  </div>
+</div>
+<div id="saveview" hidden role="dialog" aria-modal="true" aria-labelledby="saveview-title">
+  <div class="box" style="display:flex;flex-direction:column;gap:12px;max-width:440px;width:100%">
+    <h2 id="saveview-title">이미지로 저장</h2>
+    <img id="saveview-img" alt="저장할 이미지" style="width:100%;border:3px solid var(--line);border-radius:12px">
+    <p class="muted">이미지를 길게 누르거나 오른쪽 클릭해서 저장해 주세요.</p>
+    <button class="btn" id="saveview-close">닫기</button>
+  </div>
+</div>
+
+<!-- 위험 신호: 게임 멈춤 -->
+<div id="danger" hidden role="alertdialog" aria-modal="true" aria-labelledby="danger-title">
+  <div class="box">
+    <div class="portrait big" style="align-self:center"><img data-img="teary" alt="걱정하는 토닥이"></div>
+    <h2 id="danger-title">이건 토닥이보다 사람이 꼭 함께해야 할 이야기야</h2>
+    <p id="danger-sub"></p>
+    <div class="hotline"><span>청소년상담</span><a class="num" href="tel:1388">1388</a><span class="muted">24시간 · 전화, 문자(#1388), 카카오톡</span></div>
+    <div class="hotline"><span>자살예방 상담전화</span><a class="num" href="tel:109">109</a><span class="muted">24시간 · 누구나</span></div>
+    <p class="muted">지금 위험하거나 다쳤다면 바로 <b>112</b>(경찰)나 <b>119</b>에 연락해 주세요.</p>
+    <button class="btn" id="danger-home">처음 화면으로</button>
+  </div>
+</div>
+
+<script>
+(() => {
+/* ───────── 그림 (힉스필드로 생성) ───────── */
+const IMG = {
+  smile:'assets/todak-smile.webp', listen:'assets/todak-listen.webp', teary:'assets/todak-teary.webp', hug:'assets/todak-hug.webp',
+  town:'assets/town-bg.webp',
+  iconTalk:'assets/icon-talk.webp', iconTrash:'assets/icon-trash.webp', iconBowl:'assets/icon-bowl.webp', iconShop:'assets/icon-shop.webp',
+  tteokbokki:'assets/food-tteokbokki.webp', malatang:'assets/food-malatang.webp', hotteok:'assets/food-hotteok.webp',
+  top_cheese:'assets/top-cheese.webp', top_ramen:'assets/top-ramen.webp', top_mandu:'assets/top-mandu.webp', top_sausage:'assets/top-sausage.webp',
+  top_bunmoja:'assets/top-bunmoja.webp', top_sprouts:'assets/top-sprouts.webp', top_quail:'assets/top-quail.webp', top_crab:'assets/top-crab.webp',
+  top_icecream:'assets/top-icecream.webp', top_strawberry:'assets/top-strawberry.webp', top_cream:'assets/top-cream.webp', top_choco:'assets/top-choco.webp',
+  attentive:'assets/todak-attentive.webp', earmuff:'assets/todak-earmuff.webp', chef:'assets/todak-chef.webp', canClosed:'assets/can-closed.webp', canOpen:'assets/can-open.webp',
+};
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+$$('[data-img]').forEach(el => el.src = IMG[el.dataset.img]);
+
+/* ───────── 상태 (메모리에만, 저장 안 함) ───────── */
+const fresh = () => ({ role:null, tempIn:5, temp:5, stories:[], replies:[], chat:[], emotion:null, topic:null, room:null, comic:null, suggested:false,
+  stats:{ talks:0, dumped:0, plates:0, practice:0 } });
+let S = fresh();
+const P = () => S.role === 'parent';
+
+/* ───────── 화면 전환 ───────── */
+const screens = $$('.screen');
+function show(id){
+  screens.forEach(s => s.hidden = s.id !== 's-' + id);
+  const townish = ['town','intro','tempin','exit'].includes(id);
+  $('#bg').style.backgroundImage = townish ? `url(${IMG.town})` : 'none';
+  rain.on = townish;
+  window.scrollTo(0,0);
+  renderHud();
+}
+
+/* ───────── 한 글자씩 말풍선 ───────── */
+const typers = new Map();
+function say(el, text, done){
+  if (typeof el === 'string') el = $(el);
+  const prev = typers.get(el); if (prev) clearInterval(prev.t);
+  let i = 0; el.textContent = '';
+  const caret = document.createElement('span'); caret.className = 'caret'; caret.textContent = '▌';
+  const node = document.createTextNode(''); el.append(node, caret);
+  const finish = () => { clearInterval(st.t); node.data = text; caret.remove(); typers.delete(el); done && done(); };
+  const st = { t: setInterval(() => { node.data = text.slice(0, ++i); if (i >= text.length) finish(); }, 38), finish };
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { finish(); return; }
+  typers.set(el, st);
+}
+document.addEventListener('click', e => { const b = e.target.closest('.bubble'); if (b && typers.get(b)) typers.get(b).finish(); });
+
+/* ───────── 마음 온도 HUD ───────── */
+const subHud = `<button class="btn small" data-back>← 동네로</button><div class="meter"><i class="hud-mark"></i></div><b class="hud-temp"></b>`;
+$$('.hud.sub').forEach(h => h.innerHTML = subHud);
+const WEATHER = ['맑음', '이슬비', '비', '폭우'];
+const wLevel = () => S.temp >= 8 ? 3 : S.temp >= 5 ? 2 : S.temp >= 2 ? 1 : 0;
+function renderHud(){
+  $$('.hud-mark').forEach(m => m.style.left = (S.temp*10) + '%');
+  $$('.hud-temp').forEach(t => t.textContent = S.temp + '도' + (t.closest('#s-town') ? ' · ' + WEATHER[wLevel()] : ''));
+}
+document.addEventListener('click', e => { if (e.target.closest('[data-back]')) enterTown(); });
+
+/* ───────── 안전: 위험한 말이 나오면 멈춤 ───────── */
+const DANGER = /(죽고\s*싶|죽고싶|죽어\s*버리|죽을\s*래|죽을까|사라지고\s*싶|사라지고싶|없어지고\s*싶|살기\s*싫|살고\s*싶지\s*않|자살|자해|손목|뛰어내리|목\s*매|맞았|맞고\s*있|때렸|때려요|때려서|두들겨|폭행|학대|맞아서|맞을까\s*봐|목숨을?\s*끊|약을?\s*다\s*먹|죽여\s*버릴|칼\s*들고|찔러\s*버릴)/;
+function guard(text){
+  if (!DANGER.test(text.replace(/\s+/g,' '))) return false;
+  stopForSafety();
+  return true;
+}
+function stopForSafety(){
+  $$('textarea').forEach(t => t.value = '');
+  S.stories = []; S.replies = [];
+  $('#danger-sub').textContent = P()
+    ? '말씀해 주셔서 고마워요. 이 이야기는 전문 상담 선생님과 꼭 함께 나눠 주세요. 아이에 대한 걱정도 1388에서 상담할 수 있어요.'
+    : '말해 줘서 정말 고마워. 혼자 견디지 않아도 돼. 지금 바로 아래 번호로 연락해 줘. 믿을 수 있는 어른에게도 꼭 알려 줘.';
+  $('#danger').hidden = false; rain.on = false;
+  $('#danger-home').focus();
+}
+$('#danger-home').onclick = () => { $('#danger').hidden = true; resetAll(); };
+
+/* ───────── 감정·주제 읽기 ───────── */
+const EMO = [
+  { id:'angry',   name:'화남',     w:/(화나|화가|짜증|열받|빡치|어이없|답답|미치겠)/, s:'화가 났', p:'화가 나셨' },
+  { id:'unfair',  name:'억울함',   w:/(억울|내 잘못 아|오해|누명|나만 혼)/,          s:'억울했',   p:'억울하셨' },
+  { id:'hurt',    name:'서운함',   w:/(서운|섭섭|무시|몰라주|몰라 줘|안 알아)/,        s:'서운했',   p:'서운하셨' },
+  { id:'anxious', name:'걱정',     w:/(걱정|불안|무서|떨려|겁나|두려)/,               s:'걱정됐',   p:'걱정되셨' },
+  { id:'lonely',  name:'외로움',   w:/(외로|혼자|아무도|편이 없|따돌)/,               s:'외로웠',   p:'외로우셨' },
+  { id:'tired',   name:'지침',     w:/(힘들|지쳐|지친|피곤|지겨|버거)/,               s:'지쳤',     p:'지치셨' },
+  { id:'sad',     name:'속상함',   w:/(속상|슬퍼|슬프|눈물|울었|우울)/,               s:'속상했',   p:'속상하셨' },
+];
+const TOPIC = [
+  { id:'grades',  w:/(성적|시험|점수|공부|성적표|등수|수행)/,  s:'시험이랑 성적 얘기는 마음을 꽉 누르지.', p:'성적 이야기는 부모 마음도 아이 마음도 무겁게 하죠.' },
+  { id:'phone',   w:/(핸드폰|휴대폰|폰|게임|유튜브|SNS|인스타)/, s:'폰 얘기만 나오면 서로 날이 서지.', p:'휴대폰 문제는 많은 집에서 매일 부딪히는 일이에요.' },
+  { id:'friend',  w:/(친구|단톡|반 애들|같은 반|무리)/,         s:'친구 일은 하루 종일 마음에 남지.', p:'아이의 친구 문제는 지켜보는 쪽도 애가 타죠.' },
+  { id:'academy', w:/(학원|숙제|과제)/,                         s:'학원에 숙제에, 하루가 너무 꽉 차 있지.', p:'학원과 숙제 사이에서 아이도 부모도 지치기 쉬워요.' },
+  { id:'family',  w:/(엄마|아빠|부모|아이|애가|딸|아들|사춘기|방문|대화)/, s:'가족이랑 부딪히면 집에 있어도 쉬는 것 같지 않지.', p:'가장 가까운 사이라서 더 아프게 느껴지죠.' },
+];
+const readEmo = t => EMO.find(e => e.w.test(t)) || EMO[EMO.length-1];
+const readTopic = t => TOPIC.find(x => x.w.test(t)) || null;
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+/* ───────── Gemini(AI) 토닥이 · 연결이 안 되면 준비한 말로 ─────────
+   AI 답은 같은 사이트의 /api/gemini (Vercel 서버 함수)를 거쳐요.
+   Gemini 키는 Vercel 환경 변수 GEMINI_API_KEY 에만 있고, 브라우저나 GitHub 코드에는 없어요.
+   파일을 직접 열거나 서버 함수가 없는 곳에서 열면 토닥이가 준비한 말로 답해요. */
+const AI_URL = '/api/gemini';
+let AI = null, aiState = 'checking', aiModel = '';
+function renderAINote(msg){
+  const n = $('#ai-note'); if (!n) return;
+  if (!msg && aiState === 'checking') { n.hidden = true; return; }
+  n.textContent = msg || (aiState === 'ok'
+    ? `토닥이의 답은 Google Gemini(AI${aiModel ? ', ' + aiModel : ''})가 만들어요. 쓴 글은 답을 만들 때만 Google로 보내지고 이 앱에는 저장되지 않아요. 무료 Gemini는 Google 검토자가 내용을 볼 수 있으니 실제 개인 이야기는 쓰지 마세요. (마음 쓰레기통 글은 보내지 않아요.)`
+    : 'AI가 연결되지 않아서 토닥이가 미리 준비한 말로 답해요.');
+  n.hidden = false;
+}
+function aiFail(e){
+  const c = e && e.code;
+  if (c === 'bad_key' || c === 'not_configured' || c === 'no_ai') { AI = null; aiState = 'off'; renderAINote(); }
+  else if (c === 'rate_limited') renderAINote('Gemini 무료 사용량이 잠깐 꽉 찼어요. 잠시 동안은 준비한 말로 답해요.');
+  else if (c === 'network' || c === 'upstream') renderAINote('인터넷 연결이나 Gemini 서버 문제로 답을 못 받았어요. 준비한 말로 대신 답해요.');
+}
+async function gemini(prompt, json){
+  if (!AI) throw { code:'no_ai' };
+  let r, d = {};
+  try {
+    r = await fetch(AI_URL, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ prompt, json: !!json }) });
+  } catch { throw { code:'network' }; }
+  try { d = await r.json(); } catch {}
+  if (!r.ok) throw { code: d.code || (r.status === 429 ? 'rate_limited' : 'network'), status:r.status };
+  if (!d.text) throw { code: d.code || 'empty' };
+  return d.text;
+}
+// 서버 함수가 있고 키가 설정돼 있는지 한 번 확인
+(async () => {
+  if (location.protocol === 'file:') { aiState = 'off'; renderAINote(); return; }
+  try {
+    const r = await fetch(AI_URL, { method:'GET', headers:{ 'Accept':'application/json' } });
+    const d = await r.json();
+    if (r.ok && d.ok) { AI = true; aiState = 'ok'; aiModel = d.model || ''; } else aiState = 'off';
+  } catch { aiState = 'off'; }
+  renderAINote();
+})();
+const persona = () => `너는 웹앱 '토닥토닥 마음 동네'의 캐릭터 '토닥이'야. 통통한 아기 수달이고 목에 노란 손수건을 둘렀어.
+지금 이야기하는 사람: ${P() ? '중학생 자녀를 둔 학부모. 다정한 존댓말(해요체)로 말해.' : '중학생. 친한 친구처럼 다정한 반말로 말해.'}
+규칙:
+- 자연스러운 한국어로 2~4문장. 이모지, 마크다운, 목록 기호 금지.
+- 사용자가 말하지 않은 사실을 지어내지 마. 상대(자녀, 부모, 친구)의 속마음을 단정하지 마.
+- 욕설, 비난, 보복을 부추기지 마. 너는 AI야. 진단이나 치료를 약속하지 말고 상담사인 척하지 마.
+- 이름, 학교, 전화번호 같은 개인정보를 묻지 마.`;
+const ROOM_RULE = {
+  comfort:'위로의 방: 해결책, 조언, 질문 없이 그저 토닥여 줘. 곁에 있어 주는 느낌으로 1~3문장.',
+  empathy:'공감의 방: 사용자가 실제로 말한 상황과 감정을 구체적으로 읽어 줘("많이 속상했겠다"처럼). 조언은 하지 마. 필요하면 짧은 질문 하나만.',
+  side:'같이 편들어 주는 방: 사용자 편이 되어 같이 속상해하고 놀라 줘. 상황에 대해서만 속상해하고, 상대를 욕하거나 나쁜 사람이라고 단정하지는 마.',
+};
+const FACE_TAG = '답의 맨 마지막 줄에 네 표정 태그를 딱 하나 붙여: #표정:웃음 / #표정:듣기 / #표정:글썽 / #표정:안아주기. 사용자가 자해나 자살을 생각하거나, 누군가에게 맞거나 학대당하고 있거나, 누군가를 해치려는 것 같으면 답은 쓰지 말고 #위험 한 줄만 써.';
+const FACEMAP = { 웃음:'smile', 듣기:'attentive', 글썽:'teary', 안아주기:'hug' };
+function parseTagged(raw){
+  const m = raw.match(/#표정\s*:\s*(웃음|듣기|글썽|안아주기)/);
+  return { danger:/#위험/.test(raw), face: m ? FACEMAP[m[1]] : null,
+    text: raw.replace(/#위험.*$/gm,'').replace(/#표정\s*:\s*\S+/g,'').replace(/[*#_`>]/g,'').trim() };
+}
+const askAI = prompt => gemini(prompt, false);
+async function askAIJson(prompt){
+  const t = await gemini(prompt, true);
+  try { return JSON.parse(t.replace(/^```(?:json)?\s*|\s*```$/g, '')); } catch { throw { code:'bad_json' }; }
+}
+
+/* ───────── 시작 ───────── */
+function startIntro(){
+  show('intro');
+  say('#b-intro', '안녕, 나는 토닥이야. 비 오는 밤엔 마음도 축축해지지? 잠깐 쉬었다 가.');
+}
+$('#pick-parent').onclick = () => chooseRole('parent');
+$('#pick-student').onclick = () => chooseRole('student');
+function chooseRole(r){
+  S.role = r; show('tempin');
+  say('#b-tempin', P() ? '어서 오세요. 들어올 때 마음 온도는 몇 도예요? 부글부글할수록 높아요.' : '들어올 때 마음 온도는 몇 도야? 부글부글할수록 높은 거야.');
+}
+const tin = $('#temp-in');
+tin.oninput = () => $('#temp-in-val').textContent = tin.value;
+$('#go-town').onclick = () => { S.tempIn = S.temp = +tin.value; enterTown(true); };
+
+function enterTown(first){
+  show('town');
+  const lines = P()
+    ? [first ? `${S.temp}도군요. 오늘 많이 애쓰셨어요. 어디부터 가 볼까요?` : '또 어디 들러 볼까요? 천천히 골라요.']
+    : [first ? `${S.temp}도구나. 여기선 아무 말이나 해도 돼. 어디부터 갈래?` : '다음엔 어디 갈래? 천천히 골라.'];
+  say('#b-town', lines[0]);
+  const w = WEATHER[wLevel()];
+  if (first) toast(P() ? `${S.temp}도, ${w}. 알겠어요.` : `${S.temp}도, ${w}. 알겠어.`);
+  else if (S.lastW !== undefined && S.lastW !== wLevel()) toast(P() ? `마음 날씨가 ${w}(으)로 바뀌었어요.` : `마음 날씨가 ${w}(으)로 바뀌었어.`);
+  S.lastW = wLevel();
+}
+
+/* ───────── 짧은 알림 · 등장 연출 · 감정 효과 ───────── */
+function toast(text){
+  const el = $('#toast'); el.textContent = text; el.classList.add('on');
+  clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2200);
+}
+function pop(imgKey, caption){
+  $('#pop-img').src = IMG[imgKey]; $('#pop-cap').textContent = caption;
+  const p = $('#pop'); p.hidden = false;
+  const face = $('.pop-face', p); fx(face, FXOF[imgKey]);
+  clearTimeout(pop.t); pop.t = setTimeout(() => p.hidden = true, 2600);
+}
+$('#pop').onclick = () => { $('#pop').hidden = true; };
+const L = '#4a2c1d';
+const FXSVG = {
+  hearts: `<svg viewBox="0 0 40 36"><path d="M20 33 C2 20 4 6 13 5 C17 5 19 8 20 10 C21 8 23 5 27 5 C36 6 38 20 20 33 Z" fill="#f29aa6" stroke="${L}" stroke-width="3" stroke-linejoin="round"/></svg>`,
+  tears: `<svg viewBox="0 0 30 40"><path d="M15 3 C9 15 5 21 5 27 A10 10 0 0 0 25 27 C25 21 21 15 15 3 Z" fill="#a9d8f0" stroke="${L}" stroke-width="3" stroke-linejoin="round"/></svg>`,
+  sparkle: `<svg viewBox="0 0 40 40"><path d="M20 2 L24 16 L38 20 L24 24 L20 38 L16 24 L2 20 L16 16 Z" fill="#f6d365" stroke="${L}" stroke-width="3" stroke-linejoin="round"/></svg>`,
+  question: `<svg viewBox="0 0 30 40"><text x="15" y="32" text-anchor="middle" font-family="Jua,sans-serif" font-size="34" fill="#fbf1dc" stroke="${L}" stroke-width="2.5" paint-order="stroke">?</text></svg>`,
+  steam: `<svg viewBox="0 0 30 44"><path d="M10 42 C2 32 18 26 10 16 C4 8 12 4 14 2 M22 40 C16 32 28 26 22 18" fill="none" stroke="#fbf1dc" stroke-width="4" stroke-linecap="round"/></svg>`,
+};
+const FXOF = { hug:'hearts', teary:'tears', smile:'sparkle', listen:'question', chef:'sparkle', earmuff:null, attentive:null };
+// 감정 효과 위치: [left%, top%]
+const FXPOS = { hearts:[[-6,4],[70,-6],[78,40]], tears:[[4,30],[72,32],[38,-8]], sparkle:[[-4,0],[74,-4],[80,46]], question:[[74,-10],[84,30],[-6,6]], steam:[[2,-12],[70,-14],[36,-18]] };
+function fx(portrait, kind){
+  if (!portrait) return;
+  $$('.fx', portrait).forEach(x => x.remove());
+  if (!kind || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const box = document.createElement('div'); box.className = 'fx ' + kind; box.setAttribute('aria-hidden','true');
+  box.innerHTML = FXPOS[kind].map(() => FXSVG[kind]).join('');
+  $$('svg', box).forEach((s, i) => { s.style.left = FXPOS[kind][i][0] + '%'; s.style.top = FXPOS[kind][i][1] + '%'; });
+  portrait.append(box);
+}
+$$('[data-go]').forEach(b => b.onclick = () => ({counsel:openCounsel, trash:openTrash, comic:openComic, food:openFood})[b.dataset.go]());
+
+/* ───────── 1. 상담소 ───────── */
+const ROOMS = { comfort:'위로의 방', empathy:'공감의 방', side:'같이 편들어 주는 방' };
+function face(id, key){
+  const img = $(id); img.src = IMG[key];
+  // 편들어 주는 방에서 글썽일 땐 김(씩씩)도 같이
+  fx(img.parentElement, key === 'teary' && S.room === 'side' && id === '#counsel-face' ? 'steam' : FXOF[key]);
+}
+function openCounsel(){
+  show('counsel'); face('#counsel-face','attentive');
+  $('#room-list').hidden = false; $('#counsel-chat').hidden = true;
+  $$('.room-pick').forEach(b => b.setAttribute('aria-pressed','false'));
+  say('#b-counsel', P() ? '어떤 방으로 모실까요? 오늘 필요한 방을 골라 주세요.' : '어느 방으로 갈래? 오늘 필요한 걸로 골라.');
+}
+$$('.room-pick').forEach(b => b.onclick = () => {
+  S.room = b.dataset.room;
+  $$('.room-pick').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  $('#room-list').hidden = true; $('#counsel-chat').hidden = false;
+  $('#counsel-room-name').textContent = ROOMS[S.room] + ' · 이름·학교·전화번호는 빼고 써 주세요';
+  $('#counsel-text').placeholder = P()
+    ? '예) 아이가 요즘 방문을 닫고 들어가서 말을 안 해요. 저녁 먹자고 불러도 대답이 없어서 속상했어요.'
+    : '예) 엄마가 성적표 보고 한숨만 쉬었어. 나도 열심히 했는데 아무 말도 못 하고 방에 들어왔어.';
+  face('#counsel-face', 'attentive');
+  const enter = {
+    comfort:['hug',  P() ? '(두 팔을 활짝) 어서 오세요. 여기선 아무것도 정리 안 하셔도 돼요.' : '(두 팔을 활짝) 어서 와. 여기선 아무것도 정리 안 해도 돼.'],
+    empathy:['attentive', P() ? '(고개를 갸웃) 무슨 일이 있었는지 하나씩 들어 볼게요.' : '(고개를 갸웃) 무슨 일이었는지 하나씩 들어 볼게.'],
+    side:   ['teary', P() ? '(벌써 씩씩) 누가 그랬어요? 처음부터 다 말해 주세요.' : '(벌써 씩씩) 누가 그랬어? 처음부터 다 말해 봐.'],
+  }[S.room];
+  pop(enter[0], enter[1]);
+  if (S.room === 'side') fx($('.pop-face'), 'steam');
+  say('#b-counsel', S.room === 'comfort'
+    ? (P() ? '여긴 위로의 방이에요. 답은 드리지 않을게요. 그냥 들을게요.' : '여긴 위로의 방이야. 답은 안 할게. 그냥 들을게.')
+    : S.room === 'empathy'
+    ? (P() ? '여긴 공감의 방이에요. 어떤 마음이었는지 같이 읽어 볼게요.' : '여긴 공감의 방이야. 네 마음이 어땠는지 같이 읽어 볼게.')
+    : (P() ? '여긴 편들어 주는 방이에요. 오늘은 무조건 부모님 편이에요.' : '여긴 편들어 주는 방이야. 오늘은 무조건 네 편이야.'));
+  $('#counsel-text').focus();
+});
+$('#change-room').onclick = openCounsel;
+$('#counsel-text').addEventListener('input', () => { if ($('#counsel-face').src.indexOf('attentive') < 0) face('#counsel-face','attentive'); });
+
+function reply(text){
+  const e = readEmo(text), tp = readTopic(text);
+  S.emotion = e; S.topic = tp;
+  const tl = tp ? (P() ? tp.p : tp.s) + ' ' : '';
+  if (S.room === 'comfort') {
+    return { face:'hug', text: P() ? pick([
+      '토닥토닥. 여기까지 와서 말해 주셔서 고마워요. 지금은 아무것도 안 하셔도 돼요.',
+      '그러셨군요. 토닥토닥. 제가 옆에 있을게요.',
+      '후우, 같이 숨 한 번 쉬어요. 토닥토닥. 오늘 정말 애쓰셨어요.' ]) : pick([
+      '토닥토닥. 여기까지 와서 말해 줘서 고마워. 지금은 아무것도 안 해도 돼.',
+      '응, 그랬구나. 토닥토닥. 내가 옆에 있을게.',
+      '후우, 같이 숨 한 번 쉬자. 토닥토닥. 오늘 진짜 애썼어.' ]) };
+  }
+  if (S.room === 'empathy') {
+    const f = ['sad','hurt','lonely','unfair'].includes(e.id) ? 'teary' : 'hug';
+    return { face:f, text: P()
+      ? `그런 일이 있으셨군요. 많이 ${e.p}겠어요. ${tl}그 마음 안에는 아이를 아끼는 마음도 같이 들어 있는 것 같아요.`
+      : `그런 일이 있었구나. 많이 ${e.s}겠다. ${tl}그런 마음이 드는 건 이상한 게 아니야.` };
+  }
+  return { face:'teary', text: P()
+    ? `아니, 그건 정말 속상하셨겠어요! 저라도 엄청 ${e.p}을 거예요. 부모님이 얼마나 마음 쓰셨는지 몰라주니까 더 그렇죠. 오늘은 제가 부모님 편이에요.`
+    : `뭐야, 그건 진짜 너무했다! 나 같아도 엄청 ${e.s}을 거야. 네 마음을 몰라준 건 네 잘못이 아니야. 오늘은 내가 완전 네 편이야.` };
+}
+$('#send-counsel').onclick = async () => {
+  const t = $('#counsel-text').value.trim();
+  if (!t) { say('#b-counsel', P() ? '편하게 한 줄만 써 주셔도 괜찮아요.' : '한 줄만 써도 괜찮아.'); return; }
+  if (guard(t)) return;
+  const me = document.createElement('div'); me.className = 'mine'; me.textContent = t;
+  $('#chatlog').append(me);
+  $('#counsel-text').value = '';
+  S.stories.push(t); S.chat.push({ who:'me', text:t });
+  const btn = $('#send-counsel'); btn.disabled = true;
+  face('#counsel-face','attentive'); say('#b-counsel', '음…');
+  const rule = reply(t);           // 감정·주제 읽기 + 준비한 답
+  let r = null;
+  if (AI) {
+    try {
+      const hist = S.chat.slice(-8).map(c => (c.who === 'me' ? '사용자: ' : '토닥이: ') + c.text).join('\n');
+      const p = parseTagged(await askAI(`${persona()}\n지금 방 — ${ROOM_RULE[S.room]}\n${FACE_TAG}\n\n지금까지 대화:\n${hist}\n\n토닥이의 다음 답:`));
+      if (p.danger) { btn.disabled = false; stopForSafety(); return; }
+      if (p.text) r = { text:p.text, face:p.face || rule.face };
+    } catch (e) { aiFail(e); }
+  }
+  r = r || rule;
+  S.replies.push(r.text); S.chat.push({ who:'todak', text:r.text }); S.stats.talks++;
+  btn.disabled = false;
+  face('#counsel-face', r.face); say('#b-counsel', r.text, maybeSuggestFood);
+ 
+};
+// 두 번 털어놓으면 따뜻한 음식 제안 (한 번만)
+function maybeSuggestFood(){
+  if (S.suggested || S.stats.talks < 2) return;
+  S.suggested = true;
+  const d = document.createElement('div'); d.className = 'suggest';
+  d.innerHTML = `<span></span><div class="row"><button class="btn small" data-s="stay"></button><button class="btn small yellow" data-s="food"></button></div>`;
+  $('span', d).textContent = P() ? '말씀하고 나니 좀 어떠세요? 따뜻한 거 드시러 가실래요?' : '말하고 나니까 좀 어때? 따뜻한 거 먹으러 갈래?';
+  $('[data-s=stay]', d).textContent = '계속 얘기하기';
+  $('[data-s=food]', d).textContent = '회전식당 가기';
+  $('[data-s=stay]', d).onclick = () => d.remove();
+  $('[data-s=food]', d).onclick = () => openFood();
+  $('#chatlog').append(d);
+}
+
+/* ───────── 2. 마음 쓰레기통 ───────── */
+function openTrash(){
+  show('trash'); resetPaper();
+  $('#trash-text').placeholder = P() ? '하고 싶은 말을 다 쏟아내 보세요. 아무도 못 봐요.' : '하고 싶은 말 다 써. 아무도 못 봐.';
+  $('#can').src = IMG.canClosed; $('#can-count').textContent = `버린 마음 ${S.stats.dumped}장`;
+  say('#b-trash', P() ? '저는 귀마개 꼈어요. 하나도 안 들려요. 마음껏 쏟아내고 버리세요.' : '나 귀마개 꼈어. 하나도 안 들려. 실컷 쓰고 버려.');
+}
+function resetPaper(){
+  $('#paper-stage').innerHTML = '<div class="paper" id="paper"><textarea id="trash-text" maxlength="1500" aria-label="하고 싶은 말"></textarea></div>';
+}
+$$('[data-dump]').forEach(b => b.onclick = () => {
+  const ta = $('#trash-text'); const t = ta ? ta.value.trim() : '';
+  if (!t) { say('#b-trash', P() ? '먼저 하고 싶은 말을 써 주세요.' : '먼저 하고 싶은 말을 써 봐.'); return; }
+  if (guard(t)) return;
+  const kind = b.dataset.dump; const stage = $('#paper-stage');
+  const can = $('#can');
+  $$('[data-dump]').forEach(x => x.disabled = true);
+  // 종이 → 쓰레기통 입구까지 거리
+  const from = stage.getBoundingClientRect(), to = can.getBoundingClientRect();
+  const dx = (to.left + to.width/2) - (from.left + from.width/2), dy = (to.top + to.height*.25) - (from.top + from.height/2);
+  if (kind !== 'fly') { can.src = IMG.canOpen; sfx($('#can-sfx'), kind === 'tear' ? '찌익!' : '꾸깃꾸깃'); }
+  else sfx($('#can-sfx'), '슝~');
+  if (kind === 'tear') {
+    stage.innerHTML = '<div class="tear-wrap"><div class="tear-half l"></div><div class="tear-half r"></div></div>';
+    $$('.tear-half', stage).forEach(h => h.textContent = t);
+    const w = $('.tear-wrap', stage); w.style.setProperty('--dx', dx + 'px'); w.style.setProperty('--dy', dy + 'px');
+    setTimeout(() => w.classList.add('go'), 250);
+  } else {
+    const p = $('#paper'); ta.readOnly = true;
+    p.style.setProperty('--dx', dx + 'px'); p.style.setProperty('--dy', dy + 'px');
+    requestAnimationFrame(() => p.classList.add(kind));
+  }
+  setTimeout(() => {
+    if (kind !== 'fly') { can.src = IMG.canClosed; can.classList.remove('wobble'); void can.offsetWidth; can.classList.add('wobble'); sfx($('#can-sfx'), '쏙!'); }
+    resetPaper(); $$('[data-dump]').forEach(x => x.disabled = false);
+    $('#trash-text').placeholder = P() ? '더 버릴 게 있으면 또 써 주세요.' : '더 버릴 거 있으면 또 써.';
+    const msg = { crumple:'꾸깃꾸깃, 쏙!', fly:'훨훨 날아가 버렸다!', tear:'찌익, 박박, 쏙!' }[kind];
+    say('#b-trash', msg + (P() ? ' 방금 쓴 말은 어디에도 남지 않았어요.' : ' 방금 쓴 말은 어디에도 안 남았어.'));
+    S.stats.dumped++;
+    $('#can-count').textContent = `버린 마음 ${S.stats.dumped}장`;
+  }, kind === 'tear' ? 1350 : 1100);
+});
+
+/* ───────── 3. 오늘을 4컷으로 + 말 연습 ───────── */
+const cut = (t, n) => t.length > n ? t.slice(0, n) + '…' : t;
+const firstSentence = t => { const ss = t.match(/[^.!?]+[.!?]?/g) || [t]; let o = ''; for (const x of ss) { o += x; if (o.trim().length >= 16) break; } return o.trim(); };
+function openComic(){
+  show('comic'); face('#comic-face','smile');
+  $('#practice').hidden = true;
+  if (!S.stories.length) {
+    $('#comic-need').hidden = false; $('#comic-box').hidden = true;
+    $('#comic-text').placeholder = P() ? '예) 아침에 등교 준비로 아이와 언성을 높였어요.' : '예) 단톡방에서 나만 빼고 약속을 잡았어.';
+    say('#b-comic', P() ? '아직 들려주신 이야기가 없네요. 오늘 있었던 일을 짧게 써 주실래요?' : '아직 들은 얘기가 없네. 오늘 있었던 일 짧게 써 줄래?');
+  } else buildComic();
+}
+$('#make-comic').onclick = () => {
+  const t = $('#comic-text').value.trim(); if (!t) return;
+  if (guard(t)) return;
+  S.stories.push(t); $('#comic-text').value = '';
+  S.room = S.room || 'empathy'; const r = reply(t); S.replies.push(r.text);
+  buildComic();
+};
+async function buildComic(){
+  $('#comic-need').hidden = true; $('#comic-box').hidden = false;
+  const story = S.stories[S.stories.length-1];
+  const e = S.emotion || readEmo(story);
+  const rep = firstSentence(S.replies[S.replies.length-1] || (P() ? '많이 애쓰셨어요.' : '많이 애썼어.'));
+  let lines = [
+    '있잖아… ' + cut(story, 46),
+    P() ? `그때 제 마음은 '${e.name}'이었어요.` : `그때 내 마음은 '${e.name}'이었어.`,
+    '토닥이: ' + cut(rep, 44),
+    P() ? '토닥이: 그 마음, 직접 말해 볼까요?' : '토닥이: 그 마음, 직접 말해 볼까?',
+  ];
+  const key = S.stories.length;
+  if (S.comic && S.comic.key === key) lines = S.comic.lines;
+  else if (AI) {
+    $('#start-practice').disabled = true; $('#comic').innerHTML = '';
+    say('#b-comic', P() ? '오늘 이야기를 만화로 그리는 중이에요…' : '오늘 얘기 만화로 그리는 중…');
+    try {
+      const j = await askAIJson(`${persona()}
+아래는 사용자가 오늘 털어놓은 이야기야. 이걸 4컷 만화 말풍선으로 정리해. 사용자가 말하지 않은 내용은 넣지 마.
+JSON만 답해: {"panels":["1컷: 무슨 일이 있었는지, 사용자 목소리로 40자 이내","2컷: 그때 사용자의 마음, 사용자 목소리로 30자 이내","3컷: 토닥이의 위로 한마디, 30자 이내","4컷: 하고 싶었던 말을 연습해 보자는 토닥이의 말, 30자 이내"]}
+1, 2컷은 ${P() ? '학부모의 존댓말' : '중학생의 반말'}로, 3, 4컷은 토닥이 말투로 써.
+
+이야기:
+${S.stories.slice(-4).join('\n')}`);
+      const ps = j && Array.isArray(j.panels) ? j.panels.filter(x => typeof x === 'string' && x.trim()) : [];
+      if (ps.length >= 4) lines = [cut(ps[0], 50), cut(ps[1], 40), '토닥이: ' + cut(ps[2].replace(/^토닥이\s*:\s*/,''), 40), '토닥이: ' + cut(ps[3].replace(/^토닥이\s*:\s*/,''), 40)];
+    } catch (err) { aiFail(err); }
+    $('#start-practice').disabled = false;
+  }
+  S.comic = { key, lines };
+  const panels = [['listen', lines[0]], ['teary', lines[1]], ['hug', lines[2]], ['smile', lines[3]]];
+  $('#comic').innerHTML = '';
+  panels.forEach(([img, text], i) => {
+    const d = document.createElement('div'); d.className = 'panel';
+    d.innerHTML = `<span class="n">${i+1}</span><p class="say"></p><img alt="">`;
+    $('.say', d).textContent = text; $('img', d).src = IMG[img];
+    $('#comic').append(d);
+  });
+  say('#b-comic', P() ? '오늘 이야기를 4컷으로 정리해 봤어요. 마지막 칸처럼, 하고 싶던 말을 연습해 볼까요?' : '오늘 이야기를 4컷으로 정리했어. 하고 싶던 말, 연습해 볼래?');
+}
+
+// 말 연습: 부모 → 토닥이가 자녀 역할, 학생 → 토닥이가 부모 역할
+const LINES = {
+  child: {
+    open: { grades:'아 또 성적 얘기야? 나도 알아서 할게.', phone:'잠깐만, 이거 한 판만 하고.', friend:'친구 얘기는 하기 싫은데…', academy:'학원 얘기면 나중에 해.', any:'왜? 나 지금 좀 피곤한데.' },
+    soft: ['…응. 그렇게 말하니까 좀 들을 만하네. 사실 나도 할 말 있었어.', '나도 요즘 좀 힘들었어. 말 안 해서 몰랐을 수도 있겠다.', '알겠어. 다음엔 나도 먼저 얘기해 볼게. 고마워.'],
+    hard: ['맨날 그 얘기잖아. 나도 듣기 싫어.', '…그래서 어쩌라고. 아 몰라.', '…그래도 다시 말 걸어 준 건 좀 낫긴 해.'],
+  },
+  parent: {
+    open: { grades:'성적표 봤어. 이번엔 왜 이렇게 떨어진 거니?', phone:'또 핸드폰이니? 하루에 몇 시간을 보는 거야.', friend:'요즘 친구들이랑은 괜찮니?', academy:'숙제는 다 했어? 학원 선생님한테 연락 왔더라.', any:'무슨 할 말 있니? 나 지금 좀 바쁜데.' },
+    soft: ['…그랬구나. 네가 그렇게 느낀 줄 몰랐어. 조금 더 말해 줄래?', '사실 나도 걱정돼서 그랬어. 네 마음부터 물어볼 걸 그랬다.', '말해 줘서 고마워. 앞으로는 우리 이렇게 얘기해 보자.'],
+    hard: ['그렇게 말하면 나도 속상하지. 뭐가 그렇게 싫었는데?', '…알았어. 그럼 네가 바라는 게 뭔지 말해 줄래?', '오늘은 서로 좀 지쳤나 보다. 그래도 말해 줘서 고마워.'],
+  },
+};
+let PR = null;
+$('#start-practice').onclick = () => {
+  const who = P() ? 'child' : 'parent';
+  const tp = (S.topic && S.topic.id) || 'any';
+  PR = { who, turn:0, log:[], tally:{ i:0, feel:0, ask:0, blame:0 } };
+  $('#practice').hidden = false; $('#practice-feedback').hidden = true; $('#practice-input').hidden = false;
+  $('#practice-log').innerHTML = '';
+  $('#practice-title').textContent = P() ? '토닥이가 자녀 역할을 할게요' : '토닥이가 엄마·아빠 역할을 할게';
+  $('#practice-help').textContent = P()
+    ? '"나는 ~해서 ~한 마음이었어"처럼 내 마음을 먼저 말해 보세요. 세 번 주고받아요.'
+    : '"나는 ~해서 ~한 마음이었어"처럼 내 마음을 먼저 말해 봐. 세 번 주고받을 거야.';
+  const open = LINES[who].open[tp] || LINES[who].open.any;
+  PR.log.push({ who:'them', text:open });
+  addLine(open, 'them');
+  updateTurn();
+  $('#practice').scrollIntoView({ behavior:'smooth', block:'start' });
+  face('#comic-face','attentive');
+  say('#b-comic', P() ? '연습이니까 틀려도 괜찮아요. 천천히 해 봐요.' : '연습이니까 틀려도 괜찮아. 천천히 해 봐.');
+};
+function addLine(text, who){
+  const d = document.createElement('div');
+  if (who === 'me') { d.className = 'mine'; d.textContent = text; }
+  else { d.className = 'talk'; d.innerHTML = `<div class="portrait" style="width:64px;height:64px;border-width:3px;box-shadow:0 3px 0 var(--line)"><img alt="토닥이"></div><div class="bubble" style="font-size:19px"></div>`;
+    $('img', d).src = IMG[PR && PR.turn >= 2 ? 'smile' : 'listen']; }
+  $('#practice-log').append(d);
+  if (who !== 'me') say($('.bubble', d), text);
+}
+function updateTurn(){ $('#practice-turn').textContent = `내 차례 (${PR.turn+1}/3)`; $('#practice-text').placeholder = P() ? '예) 엄마는 네가 대답이 없어서 서운했어. 잠깐이라도 얘기해 줬으면 좋겠어.' : '예) 나도 열심히 했는데 한숨 쉬니까 속상했어. 수고했다고 한마디 해 주면 좋겠어.'; }
+const roleName = who => who === 'child' ? '중학생 자녀' : '중학생의 엄마나 아빠';
+$('#send-practice').onclick = async () => {
+  const t = $('#practice-text').value.trim(); if (!t || !PR) return;
+  if (guard(t)) return;
+  $('#practice-text').value = '';
+  addLine(t, 'me'); PR.log.push({ who:'me', text:t });
+  const sc = { i:/(나는|내가|나도|저는|제가|엄마는|아빠는|엄마도|아빠도)/.test(t), feel:/(속상|서운|걱정|힘들|슬|화가|미안|고마|불안|외로|무서|답답|섭섭|기뻤|좋았)/.test(t),
+    ask:/(했으면|해 줘|해줘|해 줄래|해줄래|주면 좋|좋겠|싶어|싶었|하자|볼래)/.test(t), blame:/(맨날|항상|왜 너|넌 왜|너는 왜|도대체|대체 왜|짜증나|한심|그러니까 네가)/.test(t) };
+  Object.keys(sc).forEach(k => sc[k] && PR.tally[k]++);
+  const good = (sc.i || sc.feel || sc.ask) && !sc.blame;
+  const L = LINES[PR.who];
+  let line = (good ? L.soft : L.hard)[PR.turn];
+  const sendBtn = $('#send-practice'); sendBtn.disabled = true;
+  if (AI) {
+    try {
+      const hist = PR.log.map(c => (c.who === 'me' ? '사용자: ' : '상대: ') + c.text).join('\n');
+      const p = parseTagged(await askAI(`말 연습 역할극이야. 너(토닥이)는 지금 ${roleName(PR.who)} 역할을 연기해. 사용자는 ${P() ? '학부모' : '중학생'}이고, 하고 싶었던 말을 연습하는 중이야.
+- 실제 ${roleName(PR.who)}처럼 ${PR.who === 'child' ? '반말' : '자녀에게 하는 반말'}로 1~2문장만 말해. 이모지, 마크다운 금지.
+- 사용자가 "나는 ~했어"처럼 자기 마음을 말하거나 부드럽게 부탁하면 조금씩 마음을 열어. 비난하거나 몰아붙이면 살짝 방어적으로 반응하되, 상처 주는 말이나 욕은 하지 마.
+- 지금은 ${PR.turn + 1}번째 주고받기야(모두 3번). 3번째면 대화를 따뜻하게 마무리하는 쪽으로 말해.
+- 사용자가 자해나 자살, 폭력을 말하면 대사 대신 #위험 한 줄만 써.
+배경 이야기: ${cut(S.stories.slice(-2).join(' '), 300) || '(없음)'}
+
+지금까지 대화:
+${hist}
+
+상대의 다음 대사만:`));
+      if (p.danger) { sendBtn.disabled = false; stopForSafety(); return; }
+      if (p.text) line = p.text.replace(/^상대\s*:\s*/,'');
+    } catch (e) { aiFail(e); }
+  }
+  sendBtn.disabled = false;
+  PR.log.push({ who:'them', text:line });
+  PR.turn++;
+  addLine(line, 'them');
+  if (PR.turn >= 3) { $('#practice-input').hidden = true; setTimeout(feedback, 1800); }
+  else updateTurn();
+};
+async function feedback(){
+  if (!PR) return;
+  if (AI) {
+    try {
+      const mine = PR.log.filter(c => c.who === 'me').map((c, i) => `${i+1}. ${c.text}`).join('\n');
+      const j = await askAIJson(`${persona()}
+사용자가 ${roleName(PR.who)}에게 하고 싶은 말을 세 번 연습했어. 사용자가 실제로 쓴 문장만 보고 짧은 피드백을 줘. 비난 없이 따뜻하게.
+JSON만 답해: {"good":["잘한 점, 30자 안팎", "잘한 점 하나 더(없으면 생략)"],"tip":"다음에 해 볼 한 가지, 40자 안팎"}
+
+사용자가 쓴 말:
+${mine}`);
+      const good = j && Array.isArray(j.good) ? j.good.filter(x => typeof x === 'string' && x.trim()).slice(0, 2) : [];
+      if (good.length && typeof j.tip === 'string') { showFeedback(good, [j.tip]); return; }
+    } catch (e) { aiFail(e); }
+  }
+  ruleFeedback();
+}
+function showFeedback(good, tip){
+  const fb = $('#practice-feedback'); fb.hidden = false;
+  fb.innerHTML = `<strong>토닥이의 짧은 피드백</strong><ul class="feedback" style="margin:6px 0 0;padding-left:20px"></ul>`;
+  [...good.map(g => '잘한 점: ' + g), ...tip.slice(0,1).map(t => '한 가지 팁: ' + t)].forEach(x => { const li = document.createElement('li'); li.textContent = x; $('ul', fb).append(li); });
+  face('#comic-face','hug');
+  say('#b-comic', P() ? '연습 잘하셨어요. 실제로 말할 땐 오늘의 첫 문장만 기억해도 충분해요.' : '연습 잘했어! 실제로 말할 땐 오늘 첫 문장만 기억해도 충분해.');
+  S.stats.practice++; PR = null;
+}
+function ruleFeedback(){
+  const T = PR.tally, good = [], tip = [];
+  if (T.i) good.push(P() ? '"나는"으로 시작해서 내 마음을 먼저 꺼냈어요.' : '"나는"으로 시작해서 네 마음을 먼저 꺼냈어.');
+  if (T.feel) good.push(P() ? '속상함, 서운함 같은 감정 단어를 썼어요.' : '속상함, 서운함 같은 감정 단어를 썼어.');
+  if (T.ask) good.push(P() ? '바라는 것을 부드럽게 부탁했어요.' : '바라는 걸 부드럽게 부탁했어.');
+  if (T.blame) tip.push(P() ? '"맨날", "왜 너는" 같은 말은 상대를 방어하게 만들어요. "나는 ~했어"로 바꿔 보세요.' : '"맨날", "왜 그래" 같은 말은 상대가 방어하게 만들어. "나는 ~했어"로 바꿔 봐.');
+  if (!T.feel) tip.push(P() ? '다음엔 "서운했어", "걱정됐어"처럼 감정을 한 단어로 붙여 보세요.' : '다음엔 "서운했어", "걱정됐어"처럼 감정을 한 단어로 붙여 봐.');
+  if (!T.ask) tip.push(P() ? '마지막에 "~해 주면 좋겠어"로 바라는 것을 말해 보세요.' : '마지막에 "~해 주면 좋겠어"로 바라는 걸 말해 봐.');
+  if (!good.length) good.push(P() ? '어려운 대화를 끝까지 이어 갔어요. 그것만으로도 큰 한 걸음이에요.' : '어려운 대화를 끝까지 이어 갔어. 그것만으로도 큰 한 걸음이야.');
+  showFeedback(good, tip);
+}
+
+/* ───────── 4. 회전식당 ───────── */
+const FOOD = {
+  // 토핑은 음식 그림에 원래 없는 재료만 (이름, 그림 파일)
+  tteokbokki:{ name:'떡볶이', tops:[['모차렐라 치즈','cheese'], ['라면사리','ramen'], ['군만두','mandu'], ['비엔나소시지','sausage']] },
+  malatang:{ name:'마라탕', tops:[['분모자','bunmoja'], ['숙주','sprouts'], ['메추리알','quail'], ['게맛살','crab']] },
+  hotteok:{ name:'호떡', tops:[['바닐라 아이스크림','icecream'], ['딸기','strawberry'], ['휘핑크림','cream'], ['초코칩','choco']] },
+};
+let dish = null;
+// 토핑 자리 [중심 x%, 중심 y%, 너비%, 기울기°] — 음식 그림에서 실제로 얹힐 곳(소스, 국물 면, 호떡 위)
+const TOPPOS = {
+  tteokbokki:[[46,47,34,-6], [31,55,27,10], [61,64,29,-12], [67,46,25,14]],   // 치즈는 가운데 소스 위, 라면은 왼쪽, 만두·소시지는 오른쪽
+  malatang:  [[44,45,30,-8], [61,41,27,10], [37,56,22,6],  [63,56,27,-14]],   // 국물 면 위
+  hotteok:   [[50,29,29,0],  [67,34,23,14], [35,36,23,-10],[52,48,22,0]],    // 호떡 위, 초코칩은 시럽 위
+};
+const BITES = [[66,46,22],[34,48,22],[64,64,24],[36,66,24],[50,56,42]]; // [x%, y%, 크기%] 음식 가운데 쪽
+const SFX_EAT = ['냠!', '오물오물', '냠냠!', '쩝쩝', '꿀꺽!'];
+function sfx(el, text){ el.textContent = text; el.classList.remove('go'); void el.offsetWidth; el.classList.add('go'); }
+function renderStamps(){
+  const row = $('#stamps'); row.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    const s = document.createElement('i');
+    if (i < S.stats.plates) { s.className = 'on'; s.innerHTML = '<img alt="">'; $('img', s).src = IMG.smile; }
+    row.append(s);
+  }
+}
+function openFood(){
+  show('food'); face('#food-face','chef'); $('#food-pick').hidden = true; renderStamps();
+  const belt = $('#belt'); belt.innerHTML = '';
+  const keys = Object.keys(FOOD);
+  [...keys, ...keys, ...keys, ...keys].forEach((k, i) => {
+    const b = document.createElement('button'); b.className = 'plate'; b.setAttribute('aria-label', FOOD[k].name + ' 고르기');
+    if (i >= keys.length * 2) b.tabIndex = -1;
+    b.innerHTML = `<img alt="">`; $('img', b).src = IMG[k];
+    b.onclick = () => chooseFood(k); belt.append(b);
+  });
+  say('#b-food', P() ? '레일 위에서 마음에 드는 걸 골라 보세요. 따뜻한 걸 드시면 마음 온도가 1도 내려가요.' : '레일에서 먹고 싶은 거 골라 봐. 먹으면 마음 온도가 1도 내려가.');
+}
+function chooseFood(k){
+  dish = { k, tops:new Set(), bites:-1 };
+  $('#food-pick').hidden = false; $('#dish').classList.remove('eaten');
+  $('#dish-img').src = IMG[k]; $('#dish-img').alt = FOOD[k].name; $('#food-name').textContent = FOOD[k].name;
+  $$('.topping-img, .bite-mark', $('#dish')).forEach(x => x.remove());
+  $('#steam').classList.remove('off'); $('#toppings').hidden = false;
+  $('#eat').textContent = '이대로 먹기'; $('#eat-help').textContent = '토핑을 얹어 봐';
+  face('#food-face','chef');
+  const box = $('#toppings'); box.innerHTML = '';
+  FOOD[k].tops.forEach(([t, file], i) => {
+    const src = IMG['top_' + file];
+    const c = document.createElement('button'); c.className = 'btn small chip'; c.setAttribute('aria-pressed','false');
+    c.innerHTML = '<img alt=""><span></span>'; $('img', c).src = src; $('span', c).textContent = t;
+    c.onclick = () => {
+      const on = !dish.tops.has(t); on ? dish.tops.add(t) : dish.tops.delete(t);
+      c.setAttribute('aria-pressed', String(on));
+      const id = 'top-' + i; const ex = $('#' + id);
+      if (on && !ex) {
+        const s = document.createElement('img'); s.className = 'topping-img drop' + (k === 'malatang' ? ' in-soup' : ''); s.id = id; s.src = src; s.alt = t;
+        const [x, y, size, rot] = TOPPOS[k][i];
+        s.style.width = size + '%'; s.style.left = (x - size/2) + '%'; s.style.top = (y - size/2) + '%';
+        s.style.setProperty('--r', rot + 'deg'); s.style.zIndex = String(1 + i);
+        $('#dish').append(s);
+      }
+      if (!on && ex) ex.remove();
+    };
+    box.append(c);
+  });
+  $('#eat').disabled = false;
+  $('#food-pick').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  say('#b-food', `${FOOD[k].name}! ` + (P() ? '토핑도 마음껏 얹어 보세요.' : '토핑도 맘껏 얹어 봐.'));
+}
+$('#eat').onclick = () => {
+  if (!dish) return;
+  const d = $('#dish');
+  if (dish.bites < 0) {             // 주문 끝 → 먹기 시작
+    dish.bites = 0; $('#toppings').hidden = true;
+    $('#eat').textContent = `한 입 먹기 (${BITES.length}입 남음)`;
+    $('#eat-help').textContent = '한 입씩 천천히 먹어 봐';
+    say('#b-food', P() ? '천천히 드세요. 한 입 한 입 맛있게요.' : '천천히 먹어. 한 입씩 꼭꼭 씹어서!');
+    return;
+  }
+  const [x, y, size] = BITES[dish.bites];
+  const m = document.createElement('span'); m.className = 'bite-mark';
+  m.style.cssText = `left:${x}%;top:${y}%;width:${size}%;height:${size}%`;
+  d.append(m);
+  // 토핑 스티커도 한 입마다 하나씩 사라짐
+  const tag = $$('.topping-img', d)[0]; if (tag) tag.remove();
+  sfx($('#eat-sfx'), SFX_EAT[dish.bites]);
+  d.classList.remove('bite'); void d.offsetWidth; d.classList.add('bite');
+  dish.bites++;
+  const left = BITES.length - dish.bites;
+  if (left > 0) { $('#eat').textContent = `한 입 먹기 (${left}입 남음)`; return; }
+  // 다 먹음
+  $('#eat').disabled = true; $('#steam').classList.add('off');
+  setTimeout(() => {
+    d.classList.add('eaten'); $$('.bite-mark', d).forEach(x => x.remove());
+    const before = S.temp; S.temp = Math.max(0, S.temp - 1); S.stats.plates++; renderStamps();
+    const tops = [...dish.tops];
+    face('#food-face','smile');
+    say('#b-food', (tops.length ? tops.join(', ') + ' 올린 ' : '') + FOOD[dish.k].name + ' 다 먹었다! ' +
+      (before > S.temp ? (P() ? `마음 온도가 ${before}도에서 ${S.temp}도로 내려갔어요.` : `마음 온도가 ${before}도에서 ${S.temp}도로 내려갔어!`)
+                       : (P() ? '이미 마음이 잔잔하네요. 든든하게 드셨어요.' : '벌써 마음이 잔잔하네. 든든하게 먹었다!')));
+    toast(`도장 쾅! 마음 온도 ${S.temp}도`);
+    $('#eat').textContent = '빈 접시'; $('#eat-help').textContent = P() ? '레일에서 하나 더 골라도 돼요.' : '레일에서 하나 더 골라도 돼.';
+    dish = null;
+  }, 500);
+};
+
+/* ───────── 마무리 ───────── */
+$('#go-exit').onclick = () => {
+  show('exit'); face('#exit-face','attentive'); $('#exit-measure').hidden = false; $('#compare').hidden = true; $('#card').hidden = true;
+  const to = $('#temp-out'); to.value = S.temp; $('#temp-out-val').textContent = S.temp;
+  say('#b-exit', P() ? '벌써 가시게요? 나가기 전에 지금 마음 온도를 다시 재 볼까요?' : '벌써 가? 나가기 전에 지금 마음 온도 다시 재 보자.');
+};
+$('#temp-out').oninput = e => $('#temp-out-val').textContent = e.target.value;
+const tempColor = v => ['#5aa0e6','#6aaae6','#7db4e8','#9bc6ea','#c9d3a8','#f6d365','#f4b860','#f29d5e','#f08a5d','#ec7454','#e8604c'][v];
+$('#show-compare').onclick = () => {
+  const out = +$('#temp-out').value; S.temp = out;
+  $('#exit-measure').hidden = true; $('#compare').hidden = false;
+  $('#num-in').textContent = S.tempIn + '도'; $('#num-out').textContent = out + '도';
+  const st = $('#stats'); st.innerHTML = '';
+  [['털어놓기', S.stats.talks + '번'], ['버린 마음', S.stats.dumped + '장'], ['먹은 그릇', S.stats.plates + '개'], ['말 연습', S.stats.practice + '번']].forEach(([k, v]) => {
+    const d = document.createElement('div'); d.innerHTML = '<span></span><b></b>';
+    $('span', d).textContent = k; $('b', d).textContent = v; st.append(d);
+  });
+  const bi = $('#bar-in'), bo = $('#bar-out');
+  bi.style.width = bo.style.width = '0%';
+  bi.style.background = tempColor(S.tempIn); bo.style.background = tempColor(out);
+  setTimeout(() => { bi.style.width = Math.max(4, S.tempIn*10) + '%'; bo.style.width = Math.max(4, out*10) + '%'; }, 60);
+  const diff = S.tempIn - out;
+  $('#cmp-msg').textContent = diff > 0
+    ? (P() ? `${diff}도 내려갔어요. 오늘 스스로를 잘 돌보셨어요.` : `${diff}도 내려갔어. 오늘 너 자신을 잘 돌봤다.`)
+    : diff === 0
+    ? (P() ? '온도는 그대로예요. 그래도 털어놓은 것만으로 충분히 의미 있어요.' : '온도는 그대로야. 그래도 털어놓은 것만으로 충분히 의미 있어.')
+    : (P() ? `${-diff}도 올라갔어요. 아직 마음이 무거우시다면 가까운 사람이나 상담 선생님과 꼭 이야기해 보세요.` : `${-diff}도 올라갔네. 아직 마음이 무겁다면 믿을 수 있는 어른이나 상담 선생님이랑 꼭 얘기해 봐.`);
+  say('#b-exit', P() ? '들어올 때와 나갈 때를 나란히 놓아 봤어요.' : '들어올 때랑 나갈 때를 나란히 놓아 봤어.');
+};
+$('#show-card').onclick = () => {
+  $('#compare').hidden = true; $('#card').hidden = false; face('#exit-face','smile');
+  $('#card-line').textContent = P() ? pick([
+    '완벽한 부모가 아니라, 오늘도 애쓴 부모면 충분해요.',
+    '아이를 걱정하는 그 마음이 이미 사랑이에요.',
+    '오늘 속상했던 만큼, 내일은 조금 더 가벼워지길 바라요.' ]) : pick([
+    '오늘 하루 버틴 너, 진짜 잘했어.',
+    '네 마음은 작지 않아. 소중하게 다뤄도 돼.',
+    '속상한 날에도 너는 여전히 괜찮은 사람이야.' ]);
+  say('#b-exit', P() ? '오늘 와 주셔서 고마워요. 조심히 들어가세요.' : '와 줘서 고마워. 조심히 들어가.');
+  $('#card').scrollIntoView({ behavior:'smooth', block:'start' });
+};
+$('#restart').onclick = resetAll;
+
+/* ───────── 이미지로 저장 (위로 카드 · 4컷 만화) ───────── */
+const INK = '#4a2c1d';
+const loadImg = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; });
+async function readyFonts(){ try { await Promise.all([document.fonts.load('40px Jua'), document.fonts.load('700 40px Gaegu')]); } catch {} }
+function box(c, x, y, w, h, r, fill, stroke = 8, shadow = 0){
+  c.save(); boxInner(c, x, y, w, h, r, fill, stroke, shadow); c.restore();
+  c.fillStyle = INK;
+}
+function boxInner(c, x, y, w, h, r, fill, stroke, shadow){
+  if (shadow) { c.fillStyle = INK; c.beginPath(); c.roundRect(x, y + shadow, w, h, r); c.fill(); }
+  c.fillStyle = fill; c.beginPath(); c.roundRect(x, y, w, h, r); c.fill();
+  if (stroke) { c.lineWidth = stroke; c.strokeStyle = INK; c.stroke(); }
+}
+function wrap(c, text, maxW){
+  const out = []; let line = '';
+  for (const word of text.split(' ')) {
+    const tryL = line ? line + ' ' + word : word;
+    if (c.measureText(tryL).width <= maxW) { line = tryL; continue; }
+    if (line) out.push(line);
+    line = '';
+    for (const ch of word) { if (c.measureText(line + ch).width > maxW && line) { out.push(line); line = ch; } else line += ch; }
+  }
+  if (line) out.push(line);
+  return out;
+}
+function drawRounded(c, img, x, y, w, h, r){ c.save(); c.beginPath(); c.roundRect(x, y, w, h, r); c.clip(); c.drawImage(img, x, y, w, h); c.restore(); }
+async function cardCanvas(){
+  await readyFonts();
+  const cv = document.createElement('canvas'); cv.width = 720; cv.height = 1000; const c = cv.getContext('2d');
+  c.fillStyle = '#1b2444'; c.fillRect(0, 0, 720, 1000);
+  box(c, 40, 34, 640, 910, 36, '#fbf1dc', 8, 14);
+  c.fillStyle = INK; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+  c.font = '40px Jua'; c.fillText('오늘의 위로 카드', 360, 112);
+  box(c, 200, 150, 320, 320, 30, '#fff', 8, 8);
+  drawRounded(c, await loadImg(IMG.hug), 208, 158, 304, 304, 24);
+  c.font = '700 46px Gaegu';
+  let y = 545;
+  for (const l of wrap(c, $('#card-line').textContent, 540)) { c.fillText(l, 360, y); y += 58; }
+  c.font = '30px Jua'; c.globalAlpha = .8;
+  c.fillText(`마음 온도 ${S.tempIn}도 → ${S.temp}도`, 360, y + 14); c.globalAlpha = 1;
+  c.font = '30px Jua';
+  const share = wrap(c, '오늘 이야기를 가까운 사람에게도 나눠 봐', 480);
+  const bh = 40 + share.length * 40;
+  box(c, 100, y + 50, 520, bh, 20, '#f6d365', 6);
+  share.forEach((l, i) => c.fillText(l, 360, y + 50 + 48 + i * 40));
+  c.font = '24px Jua'; c.globalAlpha = .6; c.fillText('토닥토닥 마음 동네', 360, 910); c.globalAlpha = 1;
+  return cv;
+}
+async function comicCanvas(){
+  await readyFonts();
+  const cv = document.createElement('canvas'); cv.width = 720; cv.height = 1040; const c = cv.getContext('2d');
+  c.fillStyle = '#1b2444'; c.fillRect(0, 0, 720, 1040);
+  box(c, 24, 24, 672, 980, 30, '#fbf1dc', 8, 12);
+  c.fillStyle = INK; c.textAlign = 'center'; c.font = '40px Jua'; c.fillText('오늘을 4컷으로', 360, 92);
+  const lines = (S.comic && S.comic.lines) || [];
+  const faces = ['listen', 'teary', 'hug', 'smile'];
+  for (let i = 0; i < 4; i++) {
+    const x = 50 + (i % 2) * 320, y = 124 + Math.floor(i / 2) * 430, w = 300, h = 410;
+    box(c, x, y, w, h, 10, '#fff', 6);
+    box(c, x + 10, y + 10, 42, 34, 8, '#f6d365', 3);
+    c.fillStyle = INK; c.font = '24px Jua'; c.textAlign = 'center'; c.fillText(String(i + 1), x + 31, y + 36);
+    c.font = '700 28px Gaegu'; c.textAlign = 'left';
+    const tl = wrap(c, lines[i] || '', w - 40).slice(0, 5);
+    const sh = 24 + tl.length * 34;
+    box(c, x + 14, y + 54, w - 28, sh, 16, '#fbf1dc', 3);
+    c.fillStyle = INK; tl.forEach((l, k) => c.fillText(l, x + 26, y + 54 + 38 + k * 34));
+    const s = 190; drawRounded(c, await loadImg(IMG[faces[i]]), x + (w - s) / 2, y + h - s - 10, s, s, 90);
+  }
+  c.textAlign = 'center'; c.font = '24px Jua'; c.globalAlpha = .6; c.fillText('토닥토닥 마음 동네', 360, 990); c.globalAlpha = 1;
+  return cv;
+}
+async function saveCanvas(cv, filename){
+  const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+  let dl = null;
+  try { dl = window.claude && typeof window.claude.use === 'function' ? await window.claude.use('downloads') : null; } catch { dl = null; }
+  if (dl && blob) {
+    try { await dl.save({ filename, data: blob }); toast(P() ? '이미지를 저장했어요.' : '이미지 저장했어!'); return; }
+    catch (e) { if (e && (e.code === 'declined' || e.code === 'rate_limited')) return; }
+  } else if (blob && !window.claude) {
+    // 연수용 파일로 열었을 때: 바로 내려받기
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename;
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast(P() ? '이미지를 내려받았어요.' : '이미지 내려받았어!'); return;
+  }
+  $('#saveview-img').src = cv.toDataURL('image/png'); $('#saveview').hidden = false; $('#saveview-close').focus();
+}
+$('#saveview-close').onclick = () => { $('#saveview').hidden = true; };
+$('#save-card').onclick = async () => saveCanvas(await cardCanvas(), '토닥이-위로카드.png');
+$('#save-comic').onclick = async () => saveCanvas(await comicCanvas(), '토닥이-4컷.png');
+function resetAll(){
+  S = fresh(); PR = null; dish = null;
+  $$('textarea').forEach(t => t.value = '');
+  $('#chatlog').innerHTML = ''; $('#practice-log').innerHTML = ''; $('#comic').innerHTML = '';
+  tin.value = 5; $('#temp-in-val').textContent = '5';
+  startIntro();
+}
+
+/* ───────── 비 내리는 애니메이션 ───────── */
+const rain = { on:false };
+(() => {
+  const c = $('#rain'), x = c.getContext('2d'); let W, H, drops = [];
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function size(){ W = c.width = innerWidth; H = c.height = innerHeight;
+    drops = Array.from({ length: Math.round(W*H/9000) }, () => ({ x:Math.random()*W, y:Math.random()*H, v:1.2+Math.random()*1.8, l:10+Math.random()*14 })); }
+  size(); addEventListener('resize', size);
+  (function loop(){
+    x.clearRect(0,0,W,H);
+    if (rain.on) {
+      x.strokeStyle = 'rgba(170,195,240,.5)'; x.lineWidth = 2; x.lineCap = 'round'; x.beginPath();
+      // 마음 온도에 따라 날씨가 바뀜: 0~1 맑음, 2~4 이슬비, 5~7 비, 8~10 폭우
+      const lvl = S.temp >= 8 ? 3 : S.temp >= 5 ? 2 : S.temp >= 2 ? 1 : 0;
+      const n = Math.round(drops.length * [0, .3, .65, 1][lvl]), sp = [0, .7, 1, 1.6][lvl];
+      if (lvl === 0) {             // 비가 그치면 별이 반짝
+        const tt = performance.now() / 1000;
+        drops.slice(0, 40).forEach((d, i) => {
+          const a = still ? .8 : .35 + .45 * Math.abs(Math.sin(tt * .8 + i));
+          x.fillStyle = `rgba(246,211,101,${a})`;
+          const sx = (d.x * 7) % W, sy = (d.y * 3) % (H * .45), r = 1.5 + (i % 3);
+          x.fillRect(sx - r/2, sy - r/2, r, r);
+        });
+      }
+      drops.slice(0, n).forEach(d => { x.moveTo(d.x, d.y); x.lineTo(d.x - d.l*.2, d.y + d.l);
+        if (!still) { d.y += d.v*sp; d.x -= d.v*sp*.2; if (d.y > H) { d.y = -20; d.x = Math.random()*(W+40); } } });
+      x.stroke();
+    }
+    requestAnimationFrame(loop);
+  })();
+})();
+
+startIntro();
+})();
+</script>

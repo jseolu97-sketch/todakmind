@@ -1,0 +1,12 @@
+{
+  "name": "todak-maeum-dongne",
+  "private": true,
+  "description": "토닥토닥 마음 동네 — 학부모와 중학생의 마음을 토닥이는 연수용 웹앱",
+  "scripts": {
+    "dev": "node tools/serve.js",
+    "build:single": "node tools/build-single.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
